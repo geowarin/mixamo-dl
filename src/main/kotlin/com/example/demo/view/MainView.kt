@@ -32,6 +32,7 @@ class MainView : View("Hello TornadoFX") {
                         }
                         label(it.name) {
                             textFill = Color.WHITE
+                            isWrapText = true
                         }
                     }
                 }
@@ -50,6 +51,7 @@ class MainView : View("Hello TornadoFX") {
                         }
                         label(it.name) {
                             textFill = Color.WHITE
+                            isWrapText = true
                         }
                     }
                 }
@@ -89,12 +91,14 @@ class ProductsController : Controller() {
     }
 
     private fun writeFile(jobResult: String, motionPack: Product, character: Product) {
-        println("Writing file")
+        val fileName = "${character.name}_${motionPack.name}.zip"
+        println("Writing file $fileName...")
         URL(jobResult).openStream().use { urlStream ->
-            File("${character.name}_${motionPack.name}.zip").outputStream().use { out ->
+            File(fileName).outputStream().use { out ->
                 urlStream.copyTo(out)
             }
         }
+        println("Done!")
     }
 
     private fun monitor(exportResultUuid: String): OperationResult {
@@ -118,10 +122,12 @@ class ProductsController : Controller() {
 
     private fun toExportParameters(hashes: List<Motion>, characterId: String): JsonObject {
         var motionOptionsArray = Json.createArrayBuilder()
-        hashes.forEach {
-            val motionOptions = Json.createObjectBuilder(it.gms_hash)
-                    .add("name", it.name)
-                    .add("params", "0")
+        hashes.forEach { motion ->
+            val motionOptions = Json.createObjectBuilder(motion.gms_hash)
+                    .add("name", motion.name)
+                    // "params": [["Posture", 1.0], ["Step Width", 1.0], ["Overdrive", 0.0]] => 1.0,1.0,1.0
+                    .add("params", motion.gms_hash.jsonArray("params")?.joinToString { it.asJsonArray()[1].toString() } ?: "0")
+
             motionOptionsArray = motionOptionsArray.add(motionOptions)
         }
         val objectBuilder = Json.createObjectBuilder()
