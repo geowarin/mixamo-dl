@@ -1,5 +1,6 @@
 package com.example.demo.view
 
+import javafx.beans.binding.Bindings
 import javafx.beans.property.*
 import javafx.collections.ObservableList
 import javafx.scene.paint.Color
@@ -15,8 +16,7 @@ class MainView : View("Hello TornadoFX") {
     val productsController by inject<ProductsController>()
 
     private val selectedCharacter: ObjectProperty<Product> = SimpleObjectProperty()
-    private val selectedMotionPack: ObjectProperty<Product> = SimpleObjectProperty()
-
+    private val selectedMotionPacks = observableList<Product>()
 
     override val root = vbox {
         hbox {
@@ -42,6 +42,7 @@ class MainView : View("Hello TornadoFX") {
             datagrid(productsController.loadMotionPacks()) {
                 cellHeight = 75.0
                 cellWidth = 75.0
+                multiSelect = true
 
                 cellCache {
                     stackpane {
@@ -55,13 +56,13 @@ class MainView : View("Hello TornadoFX") {
                         }
                     }
                 }
-                bindSelected(selectedMotionPack)
+                Bindings.bindContent(selectedMotionPacks, selectionModel.selectedItems)
             }
         }
 
         button("Download").action {
             runAsync {
-                productsController.download(selectedMotionPack.get(), selectedCharacter.get())
+                productsController.download(selectedMotionPacks, selectedCharacter.get())
             }
         }
     }
@@ -70,8 +71,8 @@ class MainView : View("Hello TornadoFX") {
 class ProductsController : Controller() {
     val api: Rest by inject()
 
-    fun download(motionPack: Product, character: Product) {
-        val motions = getGmsHashes(motionPack.id, character.id)
+    fun download(motionPacks: List<Product>, character: Product) {
+        val motions = motionPacks.flatMap { getMotions(it.id, character.id) }
         val exportResult = export(motions, character.id)
         if (exportResult.status == "failed") {
             throw IllegalStateException("job failed")
@@ -87,11 +88,11 @@ class ProductsController : Controller() {
         if (monitorResult.status == "failed") {
             throw IllegalStateException("job failed")
         }
-        writeFile(monitorResult.jobResult, motionPack, character)
+        val motionPackName = motionPacks.joinToString { it.name }
+        writeFile(monitorResult.jobResult, "${character.name}_${motionPackName}.zip")
     }
 
-    private fun writeFile(jobResult: String, motionPack: Product, character: Product) {
-        val fileName = "${character.name}_${motionPack.name}.zip"
+    private fun writeFile(jobResult: String, fileName: String) {
         println("Writing file $fileName...")
         URL(jobResult).openStream().use { urlStream ->
             File(fileName).outputStream().use { out ->
@@ -105,7 +106,7 @@ class ProductsController : Controller() {
         return api.get("characters/${exportResultUuid}/monitor").one().toModel()
     }
 
-    private fun getGmsHashes(motionPackId: String, characterId: String): List<Motion> {
+    private fun getMotions(motionPackId: String, characterId: String): List<Motion> {
         val params = mapOf(
                 "character_id" to characterId
         )
