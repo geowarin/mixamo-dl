@@ -15,7 +15,7 @@ import tornadofx.setValue
 class MainView : View("Hello TornadoFX") {
     val productsController by inject<ProductsController>()
 
-    private val selectedCharacter: ObjectProperty<Product> = SimpleObjectProperty()
+    private val selectedCharacter = SimpleObjectProperty<Product>()
     private val selectedMotionPacks = observableList<Product>()
 
     override val root = vbox {
@@ -72,7 +72,7 @@ class ProductsController : Controller() {
     val api: Rest by inject()
 
     fun download(motionPacks: List<Product>, character: Product) {
-        val motions = motionPacks.flatMap { getMotions(it.id, character.id) }
+        val motions = motionPacks.flatMap { getMotions(it.id) }
         val exportResult = export(motions, character.id)
         if (exportResult.status == "failed") {
             throw IllegalStateException("job failed")
@@ -89,7 +89,7 @@ class ProductsController : Controller() {
             throw IllegalStateException("job failed")
         }
         val motionPackName = motionPacks.joinToString { it.name }
-        writeFile(monitorResult.jobResult, "${character.name}_${motionPackName}.zip")
+        writeFile(monitorResult.jobResult, "downloads/${character.name}_${motionPackName}.zip")
     }
 
     private fun writeFile(jobResult: String, fileName: String) {
@@ -106,10 +106,7 @@ class ProductsController : Controller() {
         return api.get("characters/${exportResultUuid}/monitor").one().toModel()
     }
 
-    private fun getMotions(motionPackId: String, characterId: String): List<Motion> {
-        val params = mapOf(
-                "character_id" to characterId
-        )
+    private fun getMotions(motionPackId: String): List<Motion> {
         return api.get("products/${motionPackId}${params.queryString}").one()
                 .jsonObject("details")!!
                 .getJsonArray("motions")
