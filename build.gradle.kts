@@ -1,6 +1,6 @@
 plugins {
     // Apply the Kotlin JVM plugin to add support for Kotlin.
-    id("org.jetbrains.kotlin.jvm") version "1.3.71"
+    id("org.jetbrains.kotlin.jvm") version "1.3.72"
 
     // Apply the application plugin to add support for building a CLI application.
     application
@@ -21,6 +21,9 @@ dependencies {
 
     implementation("com.github.andrewoma.kwery:core:0.17")
     implementation("org.xerial:sqlite-jdbc:3.31.1")
+    implementation("khttp:khttp:1.0.0")
+    implementation("com.nfeld.jsonpathlite:json-path-lite:1.1.0")
+
 
     // Use the Kotlin JDK 8 standard library.
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
