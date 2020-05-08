@@ -60,20 +60,16 @@ values (:id, json(:data))
 
   @Language("sql")
   private val insertProductDetailsQuery = """
-insert into productsDetails(id, data)
+insert into productDetails(id, data)
 values (:id, json(:data))
 """
 
-  fun insertProductsDetails(array: JSONArray) {
-    println("Inserting ${array.length()} products details")
-    val params: List<Map<String, String>> = array.mapObj {
-      mapOf(
-          "id" to it.string("id"),
-          "data" to it.toString()
+  fun insertProductDetails(obj: JSONObject) {
+      val params = mapOf(
+          "id" to obj.string("id"),
+          "data" to obj.toString()
       )
-    }
-
-    session.batchUpdate(insertProductQuery, params)
+    session.update(insertProductDetailsQuery, params)
   }
 
   @Language("sql")
@@ -99,7 +95,10 @@ where type = :type
 data class Product(
     val id: String,
     val data: JSONObject
-)
+) {
+  val name: String?
+    get() = data.read("$.name")
+}
 
 val baseURI = "https://www.mixamo.com/api/v1"
 val token = """
@@ -112,16 +111,24 @@ val headers = mapOf(
 
 fun main() {
   val queries = Queries(session("./mixamo.sqlite"))
-  queries.createTables()
 
-  queries.getProducts("MotionPack").forEach {
-    println(it.data)
+  queries.getProducts("MotionPack").forEach { motionPack ->
+
+    val resultObj = get(
+        url = "$baseURI/products/${motionPack.id}",
+        headers = headers
+    ).jsonObject
+
+    println("Inserting details for ${motionPack.name}")
+    println(resultObj.toString())
+    queries.insertProductDetails(resultObj)
+
+    Thread.sleep(500)
   }
 }
 
 private fun insertProducts() {
   val queries = Queries(session("./mixamo.sqlite"))
-  queries.createTables()
 
   var page = 1
   var maxPage: Int
