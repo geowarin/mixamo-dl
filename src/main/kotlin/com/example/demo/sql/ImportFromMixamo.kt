@@ -112,7 +112,7 @@ val headers = mapOf(
 fun main() {
   val queries = Queries(session("./mixamo.sqlite"))
 
-  queries.getProducts("MotionPack").forEach { motionPack ->
+  queries.getProducts("Motion").forEach { motionPack ->
 
     val resultObj = get(
         url = "$baseURI/products/${motionPack.id}",
