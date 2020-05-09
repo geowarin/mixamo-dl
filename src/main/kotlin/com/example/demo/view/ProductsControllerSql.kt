@@ -72,11 +72,11 @@ class ProductsControllerSql : Controller() {
     )
   }
 
-  private fun getMotionPackDetails(motionPackId: String): MotionPackDetails {
-    return queries.getProductsDetails(motionPackId).toMotionPackDetails()
+  private fun getMotionPackDetails(motionPackId: String): HasMotions {
+    return queries.getProductsDetails(motionPackId).toMotionDetails()
   }
 
-  fun export(motions: List<MotionPackDetails>, characterId: String): OperationResult {
+  private fun export(motions: List<HasMotions>, characterId: String): OperationResult {
     val payload = combineExportParameters(motions, characterId)
     val resultObj = khttp.post(
         url = "${baseURI}/animations/export",
@@ -86,21 +86,17 @@ class ProductsControllerSql : Controller() {
     return operationResult(resultObj)
   }
 
-  fun toExportParameters(motionPackDetails: MotionPackDetails): List<JSONObject> {
+  fun toExportParameters(motionPackDetails: HasMotions): List<JSONObject> {
     return motionPackDetails.motions.map { motionDetails ->
       motionDetails.gms_hash
           .put("name", motionDetails.name)
-          .put("params", motionDetails.gms_hash.read<JSONArray>("$.params")!!.joinToString { (it as JSONArray).getDouble(1).toString() })
+          // "params": [["Posture", 1.0], ["Step Width", 1.0], ["Overdrive", 0.0]] => 1.0,1.0,1.0
+          .put("params", motionDetails.gms_hash.read<JSONArray>("$.params")!!
+              .joinToString { (it as JSONArray).getDouble(1).toString() })
     }
   }
 
-  fun toExportParameters(motionDetails: MotionDetails): JSONObject {
-    return motionDetails.gms_hash
-        .put("name", motionDetails.name)
-        .put("params", motionDetails.gms_hash.read<JSONArray>("$.params")!!.joinToString { (it as JSONArray).getDouble(1).toString() })
-  }
-
-  fun combineExportParameters(motionPackDetails: List<MotionPackDetails>, characterId: String): JSONObject {
+  fun combineExportParameters(motionPackDetails: List<HasMotions>, characterId: String): JSONObject {
     val motionOptionsArray: List<JSONObject> = motionPackDetails.flatMap { toExportParameters(it) }
     return JSONObject()
         .put("gms_hash", motionOptionsArray)
@@ -119,7 +115,7 @@ class ProductsControllerSql : Controller() {
   fun loadMotionPacks(): List<Product> = queries.getProducts(ProductType.MotionPack)
 
   fun loadCharacters(): List<Product> = queries.getProducts(ProductType.Character)
-  
+
   fun loadMotions(): List<Product> = queries.getProducts(ProductType.Motion)
 
 }

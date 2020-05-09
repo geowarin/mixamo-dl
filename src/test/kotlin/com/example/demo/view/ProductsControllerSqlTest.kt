@@ -14,7 +14,7 @@ internal class ProductsControllerSqlTest {
   fun `convert parameters of motion pack`() {
 
     // Slim Shooter Pack
-    val motionPackDetails = productsControllerSql.queries.getProductsDetails("c9d585a5-b96c-11e4-a802-0aaa78deedf9").toMotionPackDetails()
+    val motionPackDetails = productsControllerSql.queries.getProductsDetails("c9d585a5-b96c-11e4-a802-0aaa78deedf9").toMotionDetails()
     val exportParameters: List<JSONObject> = productsControllerSql.toExportParameters(motionPackDetails)
     val expected = """
 {
@@ -43,7 +43,7 @@ internal class ProductsControllerSqlTest {
 
     // Rifle Run --  Aimed
     val motionDetails = productsControllerSql.queries.getProductsDetails("c9c814a0-b96c-11e4-a802-0aaa78deedf9").toMotionDetails()
-    val exportParameters: JSONObject = productsControllerSql.toExportParameters(motionDetails)
+    val exportParameters: List<JSONObject> = productsControllerSql.toExportParameters(motionDetails)
 
     val expected = """
 {
@@ -59,6 +59,6 @@ internal class ProductsControllerSqlTest {
   "params": "1.0, 0.0, 0.0"
 }
 """
-    JSONAssert.assertEquals(expected, exportParameters.toString(), JSONCompareMode.LENIENT)
+    JSONAssert.assertEquals(expected, exportParameters.first().toString(), JSONCompareMode.LENIENT)
   }
 }

@@ -22,36 +22,31 @@ class Product(
   val thumbnail_animated: String
     get() = data.read("$.thumbnail_animated")!!
 
-  fun toMotionPackDetails() = when(type) {
+  fun toMotionDetails(): HasMotions = when(type) {
+    ProductType.Motion -> MotionDetails(this.data, "$.details.gms_hash")
     ProductType.MotionPack -> MotionPackDetails(this)
     else -> throw Error("Not a motion")
   }
-
-  fun toMotionDetails() = when(type) {
-    ProductType.Motion -> MotionDetails(this.data)
-    else -> throw Error("Not a motion")
-  }
 }
 
-class MotionPackDetails(val product: Product) {
-  val motions
-  get() = product.data.read<JSONArray>("$.details.motions")!!.mapObj { MotionPackMotionDetails(it) }
+interface HasMotions {
+  val motions: List<MotionDetails>
 }
 
-class MotionPackMotionDetails(val data: JSONObject) {
+class MotionPackDetails(val product: Product): HasMotions {
+  override val motions
+  get() = product.data.read<JSONArray>("$.details.motions")!!.mapObj { MotionDetails(it, "$.gms_hash") }
+}
+
+class MotionDetails(val data: JSONObject, val gmsPath: String): HasMotions {
   val gms_hash
-  get() = data.read<JSONObject>("$.gms_hash")!!
+  get() = data.read<JSONObject>(gmsPath)!!
 
   val name: String
     get() = data.read("$.name")!!
-}
 
-class MotionDetails(val data: JSONObject) {
-  val gms_hash
-  get() = data.read<JSONObject>("$.details.gms_hash")!!
-
-  val name: String
-    get() = data.read("$.name")!!
+  override val motions: List<MotionDetails>
+    get() = listOf(this)
 }
 
 enum class ProductType {
