@@ -38,6 +38,7 @@ class MainView : View("Mixamo importer") {
 
       vbox {
         textfield().setOnKeyTyped { e ->
+          paginator.currentPage = 1
           productsController.setQuery((e.source as TextField).text)
         }
         datagrid(paginator.items) {

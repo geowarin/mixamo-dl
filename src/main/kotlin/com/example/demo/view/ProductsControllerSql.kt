@@ -21,6 +21,11 @@ val headers = mapOf(
 
 class ProductsControllerSql : Controller() {
   val queries: Queries = Queries()
+  var queryResult = observableListOf<Product>()
+
+  init {
+    setQuery("")
+  }
 
   fun download(motionPacks: List<Product>, character: Product) {
     val motions = motionPacks.map { getMotionPackDetails(it.id) }
@@ -115,11 +120,9 @@ class ProductsControllerSql : Controller() {
 
   fun loadMotions(): List<Product> = queries.getProducts(ProductType.Motion)
 
-  var queryResult = observableListOf<Product>()
   fun setQuery(searchText: String?) {
     queryResult.setAll(queries.searchProduct(ProductType.Motion, searchText))
   }
-
 }
 
 data class OperationResult(
