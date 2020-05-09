@@ -23,8 +23,8 @@ class Product(
     get() = data.read("$.thumbnail_animated")!!
 
   fun toMotionDetails(): HasMotions = when(type) {
-    ProductType.Motion -> MotionDetails(this.data, "$.details.gms_hash")
-    ProductType.MotionPack -> MotionPackDetails(this)
+    ProductType.Motion -> MotionDetails(data, "$.details.gms_hash")
+    ProductType.MotionPack -> MotionPackDetails(data)
     else -> throw Error("Not a motion")
   }
 }
@@ -33,9 +33,9 @@ interface HasMotions {
   val motions: List<MotionDetails>
 }
 
-class MotionPackDetails(val product: Product): HasMotions {
+class MotionPackDetails(val data: JSONObject): HasMotions {
   override val motions
-  get() = product.data.read<JSONArray>("$.details.motions")!!.mapObj { MotionDetails(it, "$.gms_hash") }
+  get() = data.read<JSONArray>("$.details.motions")!!.mapObj { MotionDetails(it, "$.gms_hash") }
 }
 
 class MotionDetails(val data: JSONObject, val gmsPath: String): HasMotions {

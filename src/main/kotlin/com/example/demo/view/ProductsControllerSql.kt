@@ -1,5 +1,6 @@
 package com.example.demo.view
 
+import com.example.demo.downloadFile
 import com.example.demo.json.string
 import com.example.demo.sql.*
 import com.nfeld.jsonpathlite.extension.read
@@ -38,17 +39,13 @@ class ProductsControllerSql : Controller() {
     if (monitorResult.status == "failed") {
       throw Error("job failed")
     }
-    val motionPackName = motionPacks.joinToString { it.name }
+    val motionPackName = motionPacks.joinToString("-") { it.name }
     writeFile(monitorResult.jobResult!!, "downloads/${character.name}_${motionPackName}.zip")
   }
 
   private fun writeFile(jobResult: String, fileName: String) {
     println("Writing file $fileName...")
-    URL(jobResult).openStream().use { urlStream ->
-      File(fileName).outputStream().use { out ->
-        urlStream.copyTo(out)
-      }
-    }
+    downloadFile(jobResult, fileName)
     println("Done!")
   }
 
@@ -117,6 +114,11 @@ class ProductsControllerSql : Controller() {
   fun loadCharacters(): List<Product> = queries.getProducts(ProductType.Character)
 
   fun loadMotions(): List<Product> = queries.getProducts(ProductType.Motion)
+
+  var queryResult = observableListOf<Product>()
+  fun setQuery(searchText: String?) {
+    queryResult.setAll(queries.searchProduct(ProductType.Motion, searchText))
+  }
 
 }
 

@@ -108,6 +108,34 @@ where id = :id
       Product(it.string("id"), JSONObject(it.string("data")))
     }.first()
   }
+
+
+  @Language("sql")
+  private val searchProductsQuery = """
+select 
+ id,
+ data,
+ json_extract(data, '$.type') as type,
+ json_extract(data, '$.name') as name,
+ json_extract(data, '$.description') as description
+from products
+where type = :type
+and (name like :searchText  or description like :searchText )
+order by name
+"""
+
+  fun searchProduct(type: ProductType, searchText: String?): List<Product> {
+    if (searchText.isNullOrBlank()) {
+      return getProducts(type);
+    }
+    val params = mapOf(
+        "type" to type,
+        "searchText" to "%$searchText%"
+    )
+    return session.select(searchProductsQuery, params) {
+      Product(it.string("id"), JSONObject(it.string("data")))
+    }
+  }
 }
 
 private fun session(dbPath: String): Session {

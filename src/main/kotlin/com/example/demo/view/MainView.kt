@@ -2,65 +2,71 @@ package com.example.demo.view
 
 import com.example.demo.sql.Product
 import javafx.beans.binding.Bindings
-import javafx.beans.property.*
+import javafx.beans.property.SimpleObjectProperty
+import javafx.scene.control.TextField
 import javafx.scene.paint.Color
 import tornadofx.*
-import javax.json.JsonObject
-import tornadofx.getValue
-import tornadofx.setValue
 
 class MainView : View("Mixamo importer") {
-    val productsController by inject<ProductsControllerSql>()
+  val productsController by inject<ProductsControllerSql>()
 
-    private val selectedCharacter = SimpleObjectProperty<Product>()
-    private val selectedMotionPacks = observableListOf<Product>()
+  private val selectedCharacter = SimpleObjectProperty<Product>()
+  private val selectedMotionPacks = observableListOf<Product>()
 
-    override val root = vbox {
-        hbox {
-            datagrid(productsController.loadCharacters()) {
-                cellHeight = 75.0
-                cellWidth = 75.0
+  var paginator = DataGridPaginator(productsController.queryResult, itemsPerPage = 200)
 
-                cellCache {
-                    stackpane {
-                        imageview(it.thumbnail) {
-                            fitWidth = 70.0
-                            fitHeight = 70.0
-                        }
-                        label(it.name) {
-                            textFill = Color.WHITE
-                            isWrapText = true
-                        }
-                    }
-                }
-                bindSelected(selectedCharacter)
+  override val root = vbox {
+    hbox {
+      datagrid(productsController.loadCharacters()) {
+        cellHeight = 75.0
+        cellWidth = 75.0
+
+        cellCache {
+          stackpane {
+            imageview(downloadImage(it)) {
+              fitWidth = 70.0
+              fitHeight = 70.0
             }
-
-            datagrid(productsController.loadMotions()) {
-                cellHeight = 75.0
-                cellWidth = 75.0
-                multiSelect = true
-
-                cellCache {
-                    stackpane {
-                        imageview(it.thumbnail_animated) {
-                            fitWidth = 70.0
-                            fitHeight = 70.0
-                        }
-                        label(it.name) {
-                            textFill = Color.WHITE
-                            isWrapText = true
-                        }
-                    }
-                }
-                Bindings.bindContent(selectedMotionPacks, selectionModel.selectedItems)
+            label(it.name) {
+              textFill = Color.WHITE
+              isWrapText = true
             }
+          }
         }
+        bindSelected(selectedCharacter)
+      }
 
-        button("Download").action {
-            runAsync {
-                productsController.download(selectedMotionPacks, selectedCharacter.get())
-            }
+      vbox {
+        textfield().setOnKeyTyped { e ->
+          productsController.setQuery((e.source as TextField).text)
         }
+        datagrid(paginator.items) {
+          cellHeight = 75.0
+          cellWidth = 75.0
+          multiSelect = true
+
+          cellCache {
+            stackpane {
+              imageview(downloadImage(it)) {
+                fitWidth = 70.0
+                fitHeight = 70.0
+              }
+              label(it.name) {
+                textFill = Color.WHITE
+                isWrapText = true
+              }
+            }
+          }
+          Bindings.bindContent(selectedMotionPacks, selectionModel.selectedItems)
+        }
+        add(paginator)
+      }
     }
+
+    button("Download").action {
+      runAsync {
+        productsController.download(selectedMotionPacks, selectedCharacter.get())
+      }
+    }
+  }
 }
