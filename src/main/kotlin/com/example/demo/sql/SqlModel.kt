@@ -22,11 +22,6 @@ class Product(
   val thumbnail_animated: String
     get() = data.read("$.thumbnail_animated")!!
 
-  fun toMotion() = when(type) {
-    ProductType.Motion -> Motion(this)
-    else -> throw Error("Not a motion")
-  }
-
   fun toMotionPackDetails() = when(type) {
     ProductType.MotionPack -> MotionPackDetails(this)
     else -> throw Error("Not a motion")
@@ -36,9 +31,6 @@ class Product(
     ProductType.Motion -> MotionDetails(this.data)
     else -> throw Error("Not a motion")
   }
-}
-
-class Motion(val product: Product) {
 }
 
 class MotionPackDetails(val product: Product) {

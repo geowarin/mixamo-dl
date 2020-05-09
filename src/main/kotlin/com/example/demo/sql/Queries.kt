@@ -75,9 +75,11 @@ values (:id, json(:data))
 select 
  id,
  data,
- json_extract(data, '$.type') as type
+ json_extract(data, '$.type') as type,
+ json_extract(data, '$.name') as name
 from products
 where type = :type
+order by name
 """
 
   fun getProducts(type: ProductType): List<Product> {
@@ -106,8 +108,6 @@ where id = :id
       Product(it.string("id"), JSONObject(it.string("data")))
     }.first()
   }
-
-
 }
 
 private fun session(dbPath: String): Session {

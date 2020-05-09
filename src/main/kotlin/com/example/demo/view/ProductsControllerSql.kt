@@ -22,7 +22,7 @@ class ProductsControllerSql : Controller() {
   val queries: Queries = Queries()
 
   fun download(motionPacks: List<Product>, character: Product) {
-    val motions = motionPacks.map { getMotions(it.id) }
+    val motions = motionPacks.map { getMotionPackDetails(it.id) }
     val exportResult = export(motions, character.id)
     if (exportResult.status == "failed") {
       throw IllegalStateException("job failed")
@@ -31,12 +31,12 @@ class ProductsControllerSql : Controller() {
     var monitorResult: OperationResult
     do {
       println("Waiting for pack...")
-      monitorResult = monitor(exportResult.uuid)
       Thread.sleep(5000)
+      monitorResult = monitor(exportResult.uuid)
     } while (monitorResult.status == "processing")
 
     if (monitorResult.status == "failed") {
-      throw IllegalStateException("job failed")
+      throw Error("job failed")
     }
     val motionPackName = motionPacks.joinToString { it.name }
     writeFile(monitorResult.jobResult!!, "downloads/${character.name}_${motionPackName}.zip")
@@ -72,7 +72,7 @@ class ProductsControllerSql : Controller() {
     )
   }
 
-  private fun getMotions(motionPackId: String): MotionPackDetails {
+  private fun getMotionPackDetails(motionPackId: String): MotionPackDetails {
     return queries.getProductsDetails(motionPackId).toMotionPackDetails()
   }
 
@@ -119,6 +119,8 @@ class ProductsControllerSql : Controller() {
   fun loadMotionPacks(): List<Product> = queries.getProducts(ProductType.MotionPack)
 
   fun loadCharacters(): List<Product> = queries.getProducts(ProductType.Character)
+  
+  fun loadMotions(): List<Product> = queries.getProducts(ProductType.Motion)
 
 }
 
