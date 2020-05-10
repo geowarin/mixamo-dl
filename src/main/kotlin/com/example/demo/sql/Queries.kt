@@ -118,9 +118,9 @@ select
  json_extract(data, '$.type') as type,
  json_extract(data, '$.name') as name,
  json_extract(data, '$.description') as description
-from products
+from detailedProducts
 where type = :type
-and (name like :searchText  or description like :searchText )
+and (name like :searchText or description like :searchText )
 order by name
 """
 

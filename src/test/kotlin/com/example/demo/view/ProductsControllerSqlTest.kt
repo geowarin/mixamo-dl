@@ -15,8 +15,8 @@ internal class ProductsControllerSqlTest {
   fun `convert parameters of motion pack`() {
 
     // Slim Shooter Pack
-    val motionPackDetails = productsControllerSql.queries.getProductsDetails("c9d585a5-b96c-11e4-a802-0aaa78deedf9").toMotionDetails()
-    val exportParameters: List<JSONObject> = productsControllerSql.toExportParameters(motionPackDetails)
+    val motions = productsControllerSql.queries.getProductsDetails("c9d585a5-b96c-11e4-a802-0aaa78deedf9").motions
+    val exportParameters: List<JSONObject> = motions.map(productsControllerSql::toExportParameters)
     val expected = """
 {
   "mirror": false,
@@ -43,8 +43,8 @@ internal class ProductsControllerSqlTest {
   fun `convert parameters of motion`() {
 
     // Rifle Run --  Aimed
-    val motionDetails = productsControllerSql.queries.getProductsDetails("c9c814a0-b96c-11e4-a802-0aaa78deedf9").toMotionDetails()
-    val exportParameters: List<JSONObject> = productsControllerSql.toExportParameters(motionDetails)
+    val motions = productsControllerSql.queries.getProductsDetails("c9c814a0-b96c-11e4-a802-0aaa78deedf9").motions
+    val exportParameters: List<JSONObject> = motions.map(productsControllerSql::toExportParameters)
 
     val expected = """
 {
@@ -67,8 +67,8 @@ internal class ProductsControllerSqlTest {
   fun `products contain details`() {
 
     // Rifle Run --  Aimed
-    val motionDetails = productsControllerSql.queries.getProducts(ProductType.Motion).find { it.id == "c9c814a0-b96c-11e4-a802-0aaa78deedf9" }!!.toMotionDetails()
-    val exportParameters: List<JSONObject> = productsControllerSql.toExportParameters(motionDetails)
+    val motions = productsControllerSql.queries.getProducts(ProductType.Motion).find { it.id == "c9c814a0-b96c-11e4-a802-0aaa78deedf9" }!!.motions
+    val exportParameters: List<JSONObject> = motions.map(productsControllerSql::toExportParameters)
 
     val expected = """
 {
