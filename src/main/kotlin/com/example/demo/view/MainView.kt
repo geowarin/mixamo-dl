@@ -32,6 +32,7 @@ class MainView : View("Mixamo importer") {
 
     center = splitpane {
 
+      setDividerPositions(0.20, 0.70, 1.0)
       datagrid(productsController.loadCharacters()) {
         cellHeight = 75.0
         cellWidth = 75.0
@@ -49,29 +50,37 @@ class MainView : View("Mixamo importer") {
             productsController.setQuery((e.source as TextField).text)
           }
         }
-        center = hbox {
-          datagrid(paginator.items) {
-            cellHeight = 75.0
-            cellWidth = 75.0
 
-            cellCache {
-              productPreview(it)
-            }
-            bindSelected(selectedMotion)
-          }.onDoubleClick {
-            val element = selectedMotion.get()
-            if (element != null && !selectedMotions.contains(element)) {
-              selectedMotions.add(element)
-            }
+        val datagrid = datagrid(paginator.items) {
+          cellHeight = 75.0
+          cellWidth = 75.0
+
+          cellCache {
+            productPreview(it)
+          }
+          bindSelected(selectedMotion)
+        }
+        datagrid.onDoubleClick {
+          val element = selectedMotion.get()
+          if (element != null && !selectedMotions.contains(element)) {
+            selectedMotions.add(element)
           }
         }
+        center = datagrid
 
         bottom = paginator
       }
 
       vbox {
+        maxWidth = 240.0
         imageview(downloadImage(selectedMotion, 220.0, 260.0))
         text(selectedMotion.select { it.description.toProperty() })
+
+        vbox {
+          checkbox("In place") {
+//            visibleWhen { it. }
+          }
+        }
       }
     }
 

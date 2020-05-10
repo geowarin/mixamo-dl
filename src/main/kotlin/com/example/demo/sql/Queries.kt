@@ -77,7 +77,7 @@ select
  data,
  json_extract(data, '$.type') as type,
  json_extract(data, '$.name') as name
-from products
+from detailedProducts
 where type = :type
 order by name
 """

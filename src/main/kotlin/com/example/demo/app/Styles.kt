@@ -10,6 +10,7 @@ class Styles : Stylesheet() {
   init {
     root {
       fontFamily = "Verdana"
+      minWidth = 2000.px
       prefWidth = 2000.px
       prefHeight = 800.px
     }

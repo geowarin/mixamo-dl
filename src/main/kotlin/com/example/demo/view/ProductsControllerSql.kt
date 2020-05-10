@@ -7,8 +7,6 @@ import com.nfeld.jsonpathlite.extension.read
 import org.json.JSONArray
 import org.json.JSONObject
 import tornadofx.*
-import java.io.File
-import java.net.URL
 
 val baseURI = "https://www.mixamo.com/api/v1"
 val token = """
@@ -27,8 +25,8 @@ class ProductsControllerSql : Controller() {
     setQuery("")
   }
 
-  fun download(motionPacks: List<Product>, character: Product) {
-    val motions = motionPacks.map { getMotionPackDetails(it.id) }
+  fun download(selectedMotions: List<Product>, character: Product) {
+    val motions = selectedMotions.map { it.toMotionDetails() }
     val exportResult = export(motions, character.id)
     if (exportResult.status == "failed") {
       throw IllegalStateException("job failed")
@@ -44,8 +42,7 @@ class ProductsControllerSql : Controller() {
     if (monitorResult.status == "failed") {
       throw Error("job failed")
     }
-    val motionPackName = motionPacks.joinToString("-") { it.name }
-    writeFile(monitorResult.jobResult!!, "downloads/${character.name}_${motionPackName}.zip")
+    writeFile(monitorResult.jobResult!!, "downloads/${character.name}_custom.zip")
   }
 
   private fun writeFile(jobResult: String, fileName: String) {
@@ -72,10 +69,6 @@ class ProductsControllerSql : Controller() {
         uuid = resultObj.string("uuid"),
         jobResult = resultObj.optString("job_result")
     )
-  }
-
-  private fun getMotionPackDetails(motionPackId: String): HasMotions {
-    return queries.getProductsDetails(motionPackId).toMotionDetails()
   }
 
   private fun export(motions: List<HasMotions>, characterId: String): OperationResult {
