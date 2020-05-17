@@ -124,7 +124,7 @@ and (name like :searchText or description like :searchText )
 order by name
 """
 
-  fun searchProduct(type: ProductType, searchText: String?): List<Product> {
+  fun searchProduct(type: ProductType, searchText: String? = null): List<Product> {
     if (searchText.isNullOrBlank()) {
       return getProducts(type);
     }

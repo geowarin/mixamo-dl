@@ -30,6 +30,8 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.5.2")
     testImplementation("org.junit.jupiter:junit-jupiter-engine:5.5.2")
     testImplementation("org.skyscreamer:jsonassert:1.5.0")
+    testImplementation("org.testfx:testfx-core:4.0.16-alpha")
+    testImplementation("com.google.jimfs:jimfs:1.1")
 }
 
 application {

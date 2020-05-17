@@ -10,10 +10,12 @@ import com.nfeld.jsonpathlite.extension.read
 import org.json.JSONArray
 import org.json.JSONObject
 import tornadofx.*
+import java.nio.file.Files
+import java.nio.file.Path
 
 val baseURI = "https://www.mixamo.com/api/v1"
 val token = """
-eyJ4NXUiOiJpbXNfbmExLWtleS0xLmNlciIsImFsZyI6IlJTMjU2In0.eyJpZCI6IjE1ODg5NTk5NzkyMTRfM2M3NzRlOGUtOTJmOS00MzMwLTllYmMtOTUxYTAxZjU5ZDZjX3VlMSIsImNsaWVudF9pZCI6Im1peGFtbzEiLCJ1c2VyX2lkIjoiQTY1QjQ1MjY1QzAzMDY0QzBBNDk1Q0NGQEFkb2JlSUQiLCJzdGF0ZSI6IiIsInR5cGUiOiJhY2Nlc3NfdG9rZW4iLCJhcyI6Imltcy1uYTEiLCJmZyI6IlVOTE1WWVpSWFBPNTU3NktDNllMUVBRQUpZPT09PT09Iiwic2lkIjoiMTU4ODk1OTk3NzQ2NV81ZTQ3YjI2Mi00ZWMxLTQ4YzItYTlmMy02NGZlZjU2ZWIzODZfdWUxIiwicnRpZCI6IjE1ODg5NTk5NzkyMTRfYjMwYWExODgtOThiNi00YmY2LWJhMDctYTQ1M2M2YmZhMTU0X3VlMSIsIm9jIjoicmVuZ2EqbmExcioxNzFmNTY1MWVkYSpSQjdCNzVBUzE1MDZaOFI1WDRQSEpISjIxQyIsInJ0ZWEiOiIxNTkwMTY5NTc5MjE0IiwibW9pIjoiYWFjYzA0YWYiLCJjIjoic05ZZDRFR3NQQ3hhMi9XT3RKZkp2Zz09IiwiZXhwaXJlc19pbiI6Ijg2NDAwMDAwIiwiY3JlYXRlZF9hdCI6IjE1ODg5NTk5NzkyMTQiLCJzY29wZSI6Im9wZW5pZCxBZG9iZUlELGZldGNoX3NhbyxzYW8uY3JlYXRpdmVfY2xvdWQifQ.AyMPT--SNM0wogfsbjWCtXO_CjZ-hCqnQYaYAHhcUjnhS_B9xppkfU5XWIxCdIBvyjgfsW9GtC_vcx8n4470n4jeyxgANkVPhgnIhtNU032vPFi1ItB5NHPqLAP-ebF-ircZdfysCtAfkGqdCcvEUEftYIF4995DejBd7e_AtOFCwXEnm0-aEJ5cE70KpiuZs5mp0rBWUHun3HD4EBZGBRuj8iTP7faOj7j2aU8lkt9X0SAj1gwL3XGbxssRf4hSGMrt1otZkdUENrBDOlG-qiPHzpN7OEqm-M6xx43GBZ_Gg-B3OYvCkeYIcvjdXb3sYa1cCKp7URIrNRbOiGzj9A
+eyJ4NXUiOiJpbXNfbmExLWtleS0xLmNlciIsImFsZyI6IlJTMjU2In0.eyJpZCI6IjE1ODkxMTI3MjEyNTJfZjcwMGE2NzMtNTQ4My00MGEyLTkwZGUtM2Q5OGY0OTdjZDEzX3VlMSIsImNsaWVudF9pZCI6Im1peGFtbzEiLCJ1c2VyX2lkIjoiQTY1QjQ1MjY1QzAzMDY0QzBBNDk1Q0NGQEFkb2JlSUQiLCJzdGF0ZSI6IiIsInR5cGUiOiJhY2Nlc3NfdG9rZW4iLCJhcyI6Imltcy1uYTEiLCJmZyI6IlVOUUxYWFZRWFBPNTU3NktDNllMUVBRQUpZPT09PT09Iiwic2lkIjoiMTU4OTExMjcxOTYzOV9mZjFiZTRlYy05NDQzLTQwNTYtOGNmYy00OTUyNGFhNDRhMzVfdWUxIiwicnRpZCI6IjE1ODkxMTI3MjEyNTJfZTYwZTgwMzItNzI3ZS00Nzk4LThkYTEtMjVhMWU3NmQ5OTY4X3VlMSIsIm9jIjoicmVuZ2EqbmExcioxNzFmZTdmYzdkOSpHWEo0NkY4MDhYMktIQlNRQ0FXQjNHOUdUNCIsInJ0ZWEiOiIxNTkwMzIyMzIxMjUyIiwibW9pIjoiNjUyMzdiZWMiLCJjIjoiMHVLMkxTbVFSZmJNZFRuTUlPT2JDdz09IiwiZXhwaXJlc19pbiI6Ijg2NDAwMDAwIiwic2NvcGUiOiJvcGVuaWQsQWRvYmVJRCxmZXRjaF9zYW8sc2FvLmNyZWF0aXZlX2Nsb3VkIiwiY3JlYXRlZF9hdCI6IjE1ODkxMTI3MjEyNTIifQ.RjfqgQboXAVH72BZ_hC7Udqc-IOR8gTnMaKp67imrCrIkuWBeVEwXYr-fi9uTe9ricmK2tuaVW1KY_v3t-uYHAU_BFi2qCpzZ4mmqkIvEnWDhmJRxUGH6lVgnXj_lD38m1SkGEWaBAgRKVUTwR8LBgDUK-j7SoC3zsK8j32BZTuW9yh65yMIbgnenhbg-pxyg0ODf6y8TTU56B0gFN_bn14F9LivugFiaXwJTbmRrEKHtzeJEY1b9HAAiBJbL7sKFH4Ltn3g6obc-W2m5RJAwribdD4rZj1XWy03fhxMDHrX7fBy3qLJwxhpvYee6NtSEk-JMX5o_1cYEeMdiiXx5A
 """.trim()
 val headers = mapOf(
     "Authorization" to "Bearer $token",
@@ -23,6 +25,8 @@ val headers = mapOf(
 class ProductsControllerSql : Controller() {
   val queries: Queries = Queries()
   var queryResult = observableListOf<Product>()
+
+  val selectedMotions = observableListOf<Product>()
 
   init {
     setQuery("")
@@ -108,15 +112,27 @@ class ProductsControllerSql : Controller() {
             .joinToString { (it as JSONArray).getDouble(1).toString() })
   }
 
-  fun loadMotionPacks(): List<Product> = queries.getProducts(ProductType.MotionPack)
-
   fun loadCharacters(): List<Product> = queries.getProducts(ProductType.Character)
-
-  fun loadMotions(): List<Product> = queries.getProducts(ProductType.Motion)
 
   fun setQuery(searchText: String?) {
     queryResult.setAll(queries.searchProduct(ProductType.Motion, searchText))
   }
+
+  fun addMotionToSelection(motion: Product?) {
+    if (motion != null && !selectedMotions.contains(motion)) {
+      selectedMotions.add(motion)
+    }
+  }
+
+  fun savePack(path: Path) {
+    val motionsArray = selectedMotions.map { JSONObject().put("id", it.id) }
+    val pack = JSONObject()
+        .put("motions", motionsArray)
+
+    Files.createDirectories(path.parent)
+    Files.write(path, pack.toString().toByteArray())
+  }
+
 }
 
 data class OperationResult(

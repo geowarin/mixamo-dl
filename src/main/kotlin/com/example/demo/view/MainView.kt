@@ -13,8 +13,6 @@ class MainView : View("Mixamo importer") {
   private val selectedCharacter = SimpleObjectProperty<Product>()
   private val selectedMotion = SimpleObjectProperty<Product>()
 
-  private val selectedMotions = observableListOf<Product>()
-
   var paginator = DataGridPaginator(productsController.queryResult, itemsPerPage = 200)
 
   override val root = borderpane {
@@ -61,10 +59,7 @@ class MainView : View("Mixamo importer") {
           bindSelected(selectedMotion)
         }
         datagrid.onDoubleClick {
-          val element = selectedMotion.get()
-          if (element != null && !selectedMotions.contains(element)) {
-            selectedMotions.add(element)
-          }
+          productsController.addMotionToSelection(selectedMotion.get())
         }
         center = datagrid
 
@@ -94,6 +89,8 @@ class MainView : View("Mixamo importer") {
       }
     }
   }
+
+  private val selectedMotions get() = productsController.selectedMotions
 
   private fun productPreview(product: Product): StackPane {
     return stackpane {

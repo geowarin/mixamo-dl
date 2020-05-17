@@ -1,22 +1,31 @@
 package com.example.demo.view
 
 import com.example.demo.sql.ProductType
+import com.google.common.jimfs.Configuration
+import com.google.common.jimfs.Jimfs
 import com.nfeld.jsonpathlite.extension.read
+import org.intellij.lang.annotations.Language
+import org.json.JSONArray
 import org.json.JSONObject
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import org.skyscreamer.jsonassert.JSONAssert
-import org.skyscreamer.jsonassert.JSONCompareMode
+import org.skyscreamer.jsonassert.*
+import java.lang.IllegalStateException
+import java.nio.file.FileSystem
+import java.nio.file.Files
+import java.nio.file.Path
 import kotlin.test.assertEquals
 
 internal class ProductsControllerSqlTest {
-    val productsControllerSql = ProductsControllerSql()
+  val controller = ProductsControllerSql()
+  val fs: FileSystem = Jimfs.newFileSystem(Configuration.forCurrentPlatform())
 
   @Test
   fun `convert parameters of motion pack`() {
 
     // Slim Shooter Pack
-    val motions = productsControllerSql.queries.getProductsDetails("c9d585a5-b96c-11e4-a802-0aaa78deedf9").motions
-    val exportParameters: List<JSONObject> = motions.map(productsControllerSql::toExportParameters)
+    val motions = controller.queries.getProductsDetails("c9d585a5-b96c-11e4-a802-0aaa78deedf9").motions
+    val exportParameters: List<JSONObject> = motions.map(controller::toExportParameters)
     val expected = """
 {
   "mirror": false,
@@ -32,19 +41,21 @@ internal class ProductsControllerSqlTest {
 }
 """
     assertEquals(
-        listOf("rifle run", "strafe", "rifle aiming idle", "walking", "strafe", "reloading", "firing rifle"),
-        exportParameters.map { it.read<String>("$.name") }
+      listOf("rifle run", "strafe", "rifle aiming idle", "walking", "strafe", "reloading", "firing rifle"),
+      exportParameters.map { it.read<String>("$.name") }
     )
-    JSONAssert.assertEquals(expected, exportParameters.first().toString(), JSONCompareMode.LENIENT)
+    jsonAssert(expected, exportParameters.first().toString())
   }
 
+
+  private val RIFLE_RUN_MOTION_ID = "c9c814a0-b96c-11e4-a802-0aaa78deedf9"
 
   @Test
   fun `convert parameters of motion`() {
 
     // Rifle Run --  Aimed
-    val motions = productsControllerSql.queries.getProductsDetails("c9c814a0-b96c-11e4-a802-0aaa78deedf9").motions
-    val exportParameters: List<JSONObject> = motions.map(productsControllerSql::toExportParameters)
+    val motions = controller.queries.getProductsDetails(RIFLE_RUN_MOTION_ID).motions
+    val exportParameters: List<JSONObject> = motions.map(controller::toExportParameters)
 
     val expected = """
 {
@@ -60,15 +71,15 @@ internal class ProductsControllerSqlTest {
   "params": "1.0, 0.0, 0.0"
 }
 """
-    JSONAssert.assertEquals(expected, exportParameters.first().toString(), JSONCompareMode.LENIENT)
+    jsonAssert(expected, exportParameters.first().toString())
   }
 
   @Test
   fun `products contain details`() {
 
     // Rifle Run --  Aimed
-    val motions = productsControllerSql.queries.getProducts(ProductType.Motion).find { it.id == "c9c814a0-b96c-11e4-a802-0aaa78deedf9" }!!.motions
-    val exportParameters: List<JSONObject> = motions.map(productsControllerSql::toExportParameters)
+    val motions = controller.queries.getProducts(ProductType.Motion).find { it.id == RIFLE_RUN_MOTION_ID }!!.motions
+    val exportParameters: List<JSONObject> = motions.map(controller::toExportParameters)
 
     val expected = """
 {
@@ -84,6 +95,49 @@ internal class ProductsControllerSqlTest {
   "params": "1.0, 0.0, 0.0"
 }
 """
-    JSONAssert.assertEquals(expected, exportParameters.first().toString(), JSONCompareMode.LENIENT)
+    jsonAssert(expected, exportParameters.first().toString())
+  }
+
+  @Test
+  fun `save pack`() {
+    val path = fs.getPath("./packs/myPack.json")
+    val motion = controller.queries.getProducts(ProductType.Motion).find { it.id == RIFLE_RUN_MOTION_ID }
+
+    controller.addMotionToSelection(motion)
+    controller.savePack(path)
+
+    val expected = """
+          {
+            "motions": [
+              {"id":  ${RIFLE_RUN_MOTION_ID}}
+            ]
+          }
+      """
+    jsonAssert(expected, path.readText())
+  }
+
+}
+
+fun jsonAssert(@Language("json") expected: String, json: String) {
+  val result = JSONCompare.compareJSON(expected, json, JSONCompareMode.LENIENT)
+  if (result.failed()) {
+    Assertions.assertEquals(prettyJSON(expected), prettyJSON(json))
   }
 }
+
+fun String.isJsonEqual(@Language("json") expected: String) {
+  val result = JSONCompare.compareJSON(this, expected, JSONCompareMode.LENIENT)
+  if (result.failed()) {
+    Assertions.assertEquals(prettyJSON(expected), prettyJSON(this))
+  }
+}
+
+fun prettyJSON(jsonObject: String): String {
+  return when (val json = JSONParser.parseJSON(jsonObject)) {
+    is JSONObject -> json.toString()
+    is JSONArray -> json.toString()
+    else -> "<Unparsable json>"
+  }
+}
+
+fun Path.readText() = Files.newBufferedReader(this).readText()
