@@ -1,9 +1,11 @@
 package com.example.demo.view
 
+import com.example.demo.paths.readText
 import com.example.demo.sql.ProductType
 import com.google.common.jimfs.Configuration
 import com.google.common.jimfs.Jimfs
 import com.nfeld.jsonpathlite.extension.read
+import org.assertj.core.api.Assertions.assertThat
 import org.intellij.lang.annotations.Language
 import org.json.JSONArray
 import org.json.JSONObject
@@ -53,7 +55,6 @@ internal class ProductsControllerSqlTest {
   @Test
   fun `convert parameters of motion`() {
 
-    // Rifle Run --  Aimed
     val motions = controller.queries.getProductsDetails(RIFLE_RUN_MOTION_ID).motions
     val exportParameters: List<JSONObject> = motions.map(controller::toExportParameters)
 
@@ -116,6 +117,23 @@ internal class ProductsControllerSqlTest {
     jsonAssert(expected, path.readText())
   }
 
+  @Test
+  fun `load pack`() {
+    val path = fs.getPath("./packs/myPack.json")
+    val contents = """
+          {
+            "motions": [
+              {"id":  ${RIFLE_RUN_MOTION_ID}}
+            ]
+          }
+      """
+    path.write(contents)
+
+    controller.loadPack(path)
+
+    val motion = controller.queries.getProducts(ProductType.Motion).find { it.id == RIFLE_RUN_MOTION_ID }
+    assertThat(controller.selectedMotions).containsExactly(motion)
+  }
 }
 
 fun jsonAssert(@Language("json") expected: String, json: String) {
@@ -140,4 +158,7 @@ fun prettyJSON(jsonObject: String): String {
   }
 }
 
-fun Path.readText() = Files.newBufferedReader(this).readText()
+fun Path.write(text: String) {
+  Files.createDirectories(this.parent)
+  Files.write(this, text.toByteArray())
+}

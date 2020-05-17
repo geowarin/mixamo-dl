@@ -1,7 +1,9 @@
 package com.example.demo.view
 
 import com.example.demo.downloadFile
+import com.example.demo.json.mapObj
 import com.example.demo.json.string
+import com.example.demo.paths.readText
 import com.example.demo.sql.MotionDetails
 import com.example.demo.sql.Product
 import com.example.demo.sql.ProductType
@@ -131,6 +133,12 @@ class ProductsControllerSql : Controller() {
 
     Files.createDirectories(path.parent)
     Files.write(path, pack.toString().toByteArray())
+  }
+
+  fun loadPack(path: Path) {
+    val motionsJsonArray = JSONObject(path.readText()).getJSONArray("motions")
+    val ids = motionsJsonArray.mapObj { it.string("id") }
+    selectedMotions.setAll(queries.getProducts(ids))
   }
 
 }

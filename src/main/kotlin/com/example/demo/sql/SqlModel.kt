@@ -31,6 +31,22 @@ class Product(
       ProductType.MotionPack -> data.read<JSONArray>("$.details.motions")!!.mapObj { MotionDetails(it, "$.gms_hash") }
       else -> throw Error("Has no motions")
     }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+
+    other as Product
+
+    if (id != other.id) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int = id.hashCode()
+  override fun toString(): String {
+    return "Product(id='$id', type='$type')"
+  }
 }
 
 class MotionDetails(val data: JSONObject, val gmsPath: String) {

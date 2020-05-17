@@ -136,6 +136,27 @@ order by name
       Product(it.string("id"), JSONObject(it.string("data")))
     }
   }
+
+  @Language("sql")
+  private val selectMultiProductsQuery = """
+select 
+ id,
+ data,
+ json_extract(data, '$.type') as type,
+ json_extract(data, '$.name') as name
+from detailedProducts
+where id in (:ids)
+order by name
+"""
+
+  fun getProducts(ids: List<String>): List<Product> {
+    val params = mapOf(
+      "ids" to ids
+    )
+    return session.select(selectMultiProductsQuery, params) {
+      Product(it.string("id"), JSONObject(it.string("data")))
+    }
+  }
 }
 
 private fun session(dbPath: String): Session {
