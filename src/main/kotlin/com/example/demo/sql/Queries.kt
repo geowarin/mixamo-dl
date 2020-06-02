@@ -11,7 +11,7 @@ import org.json.JSONObject
 import java.sql.DriverManager
 
 class Queries {
-  private val session: Session = session("./mixamo.sqlite")
+  private val session: Session = session("/mixamo.sqlite")
 
   @Language("sql")
   private val createTableQuery = """
@@ -160,6 +160,7 @@ order by name
 }
 
 private fun session(dbPath: String): Session {
-  val connection = DriverManager.getConnection("jdbc:sqlite:$dbPath");
+  val resourcePath = Queries::class.java.getResource(dbPath)
+  val connection = DriverManager.getConnection("jdbc:sqlite::resource:$resourcePath");
   return DefaultSession(connection, SqliteDialect())
 }
