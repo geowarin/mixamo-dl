@@ -109,6 +109,7 @@ internal class ProductsControllerSqlTest {
 
     val expected = """
           {
+            "name": "My pack",
             "motions": [
               {"id":  ${RIFLE_RUN_MOTION_ID}}
             ]
@@ -122,6 +123,7 @@ internal class ProductsControllerSqlTest {
     val path = fs.getPath("./packs/myPack.json")
     val contents = """
           {
+            "name": "My Pack",
             "motions": [
               {"id":  ${RIFLE_RUN_MOTION_ID}}
             ]
@@ -152,8 +154,8 @@ fun String.isJsonEqual(@Language("json") expected: String) {
 
 fun prettyJSON(jsonObject: String): String {
   return when (val json = JSONParser.parseJSON(jsonObject)) {
-    is JSONObject -> json.toString()
-    is JSONArray -> json.toString()
+    is JSONObject -> json.toString(2)
+    is JSONArray -> json.toString(2)
     else -> "<Unparsable json>"
   }
 }

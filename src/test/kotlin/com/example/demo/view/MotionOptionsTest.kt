@@ -88,7 +88,7 @@ internal class MotionOptionsTest {
     assertEquals(true, totoModel.mirror.value)
     assertEquals(false, options.mirror)
     totoModel.commit()
-    assertEquals(true, options.mirror)
+    assertEquals(false, options.mirror)
   }
 
 
