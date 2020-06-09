@@ -4,6 +4,7 @@ import com.example.demo.downloadFile
 import com.example.demo.json.mapObj
 import com.example.demo.json.string
 import com.example.demo.jwt.readToken
+import com.example.demo.paths.getDataDir
 import com.example.demo.paths.readText
 import com.example.demo.sql.MotionDetails
 import com.example.demo.sql.Product
@@ -32,7 +33,11 @@ class ProductsControllerSql : Controller() {
     setQuery("")
   }
 
-  fun download(selectedMotions: List<Product>, character: Product) {
+  fun download(
+    packName: String,
+    selectedMotions: List<Product>,
+    character: Product
+  ) {
     val motions: List<MotionDetails> = selectedMotions.flatMap { it.motions }
     val exportResult = export(motions, character.id)
     if (exportResult.status == "failed") {
@@ -49,12 +54,15 @@ class ProductsControllerSql : Controller() {
     if (monitorResult.status == "failed") {
       throw Error("job failed")
     }
-    writeFile(monitorResult.jobResult!!, "downloads/${character.name}_custom.zip")
+    writeFile(monitorResult.jobResult!!, "${character.name}_${packName}.zip")
   }
 
   private fun writeFile(jobResult: String, fileName: String) {
     println("Writing file $fileName...")
-    downloadFile(jobResult, fileName)
+    downloadFile(
+      url = jobResult,
+      path = getDataDir().resolve("downloads").resolve(fileName)
+    )
     println("Done!")
   }
 

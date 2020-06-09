@@ -1,7 +1,11 @@
 package com.example.demo.view
 
+import com.example.demo.paths.getDataDir
+import com.example.demo.paths.list
 import com.example.demo.sql.Product
 import javafx.beans.property.SimpleObjectProperty
+import javafx.beans.property.SimpleStringProperty
+import javafx.scene.control.ComboBox
 import javafx.scene.control.TextField
 import javafx.scene.layout.StackPane
 import javafx.scene.paint.Color
@@ -15,17 +19,41 @@ class MainView : View("Mixamo importer") {
 
   var paginator = DataGridPaginator(productsController.queryResult, itemsPerPage = 200)
 
+  val packsDir = getDataDir().resolve("packs")
+  val selectedPack = SimpleStringProperty()
+
   override val root = borderpane {
 
-    top = datagrid(selectedMotions) {
-      maxRows = 1
-      cellHeight = 75.0
-      cellWidth = 75.0
-      maxHeight = 90.0
-      cellCache {
-        productPreview(it)
+    top = vbox {
+      var combobox: ComboBox<String>? = null
+      hbox {
+        val textfield = textfield("New Pack")
+        button("Save").action {
+          productsController.savePack(packsDir.resolve("${textfield.text}.json"))
+          combobox?.asyncItems { listPacks() }
+        }
+        combobox = combobox {
+          asyncItems { listPacks() }
+          bindSelected(selectedPack)
+        }
+
+        selectedPack.onChange { packName ->
+          if (packName != null) {
+            productsController.loadPack(packsDir.resolve(packName))
+            textfield.text = packName.removeSuffix(".json")
+          }
+        }
       }
-      bindSelected(selectedMotion)
+      datagrid(selectedMotions) {
+        maxRows = 1
+        cellHeight = 75.0
+        cellWidth = 75.0
+        maxHeight = 90.0
+        cellCache {
+          productPreview(it)
+        }
+        bindSelected(selectedMotion)
+      }
     }
 
     center = splitpane {
@@ -84,11 +112,13 @@ class MainView : View("Mixamo importer") {
         enableWhen { selectedMotions.sizeProperty.greaterThan(0).and(selectedCharacter.isNotNull) }
       }.action {
         runAsync {
-          productsController.download(selectedMotions, selectedCharacter.get())
+          productsController.download(selectedPack.get().removeSuffix(".json"), selectedMotions, selectedCharacter.get())
         }
       }
     }
   }
+
+  private fun listPacks() = packsDir.list().filter { it.toString().endsWith(".json") }.map { it.fileName.toString() }
 
   private val selectedMotions get() = productsController.selectedMotions
 
@@ -105,3 +135,4 @@ class MainView : View("Mixamo importer") {
     }
   }
 }
+

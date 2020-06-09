@@ -5,6 +5,7 @@ import java.nio.file.FileSystem
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
+import kotlin.streams.toList
 
 fun isAppRunning(): Boolean {
   val file = getCacheDir().resolve("lockFile")
@@ -42,9 +43,14 @@ fun getCacheDir(fs: FileSystem = FileSystems.getDefault()): Path {
     ?: fs.getPath(System.getProperty("user.home"), "mixamo-dl", "cache")
 }
 
-private fun getConfigDir(fs: FileSystem = FileSystems.getDefault()): Path {
+fun getConfigDir(fs: FileSystem = FileSystems.getDefault()): Path {
   return getEnvPath(fs, "XDG_CONFIG_HOME")?.resolve("mixamo-dl")
     ?: fs.getPath(System.getProperty("user.home"), "mixamo-dl", "config")
+}
+
+fun getDataDir(fs: FileSystem = FileSystems.getDefault()): Path {
+  return getEnvPath(fs, "XDG_DATA_HOME")?.resolve("mixamo-dl")
+    ?: fs.getPath(System.getProperty("user.home"), "mixamo-dl", "data")
 }
 
 private fun getEnvPath(fs: FileSystem, name: String): Path? = System.getenv(name)?.let { fs.getPath(it) }
@@ -53,3 +59,7 @@ fun Path.write(text: String) {
     it.write(text)
   }
 }
+
+fun Path.list(): List<Path> = Files.list(
+  this
+).toList()

@@ -11,8 +11,9 @@ import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import org.skyscreamer.jsonassert.*
-import java.lang.IllegalStateException
+import org.skyscreamer.jsonassert.JSONCompare
+import org.skyscreamer.jsonassert.JSONCompareMode
+import org.skyscreamer.jsonassert.JSONParser
 import java.nio.file.FileSystem
 import java.nio.file.Files
 import java.nio.file.Path
@@ -109,7 +110,6 @@ internal class ProductsControllerSqlTest {
 
     val expected = """
           {
-            "name": "My pack",
             "motions": [
               {"id":  ${RIFLE_RUN_MOTION_ID}}
             ]
@@ -123,7 +123,6 @@ internal class ProductsControllerSqlTest {
     val path = fs.getPath("./packs/myPack.json")
     val contents = """
           {
-            "name": "My Pack",
             "motions": [
               {"id":  ${RIFLE_RUN_MOTION_ID}}
             ]
