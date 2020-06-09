@@ -14,13 +14,18 @@ import com.example.demo.sql.ProductType
 import com.example.demo.sql.Queries
 import com.nfeld.jsonpathlite.extension.read
 import javafx.beans.property.SimpleStringProperty
+import javafx.concurrent.Task
 import javafx.scene.control.TextInputDialog
 import org.json.JSONArray
 import org.json.JSONObject
-import tornadofx.*
+import tornadofx.Controller
+import tornadofx.confirm
+import tornadofx.observableListOf
+import tornadofx.task
 import java.nio.file.FileSystem
 import java.nio.file.FileSystems
 import java.nio.file.Files
+import java.nio.file.Path
 
 val baseURI = "https://www.mixamo.com/api/v1"
 fun headers() = mapOf(
@@ -28,47 +33,74 @@ fun headers() = mapOf(
     "X-Api-Key" to "mixamo2"
 )
 
+class DownloadResult(
+  val path: Path? = null,
+  val status: DownloadStatus,
+  val operationResult: OperationResult
+)
+
+enum class DownloadStatus {
+  EXPORT_FAILED,
+  PROCESSING_FAILED,
+  SUCCESS
+}
+
 class ProductsControllerSql(fs: FileSystem = FileSystems.getDefault()) : Controller() {
   val queries: Queries = Queries()
   var queryResult = observableListOf<Product>()
 
   val selectedMotions = observableListOf<Product>()
 
+  val currentTaskStatus = SimpleStringProperty()
+
   init {
     setQuery("")
   }
 
-  fun download(
+  fun downloadTask(
     packName: String,
     selectedMotions: List<Product>,
     character: Product
-  ) {
-    val motions: List<MotionDetails> = selectedMotions.flatMap { it.motions }
-    val exportResult = export(motions, character.id)
-    if (exportResult.status == "failed") {
-      throw IllegalStateException("job failed")
+  ): Task<DownloadResult> {
+    return task {
+      val motions: List<MotionDetails> = selectedMotions.flatMap { it.motions }
+      updateMessage("Started export of ${motions.size} motions")
+
+      val exportResult = export(motions, character.id)
+      if (exportResult.status == "failed") {
+        return@task DownloadResult(operationResult = exportResult, status = DownloadStatus.EXPORT_FAILED)
+      }
+
+      var monitorResult: OperationResult
+      do {
+        updateMessage("Waiting for pack...")
+        Thread.sleep(5000)
+        monitorResult = monitor(exportResult.uuid)
+      } while (monitorResult.status == "processing")
+
+      if (monitorResult.status == "failed") {
+        return@task DownloadResult(operationResult = monitorResult, status = DownloadStatus.PROCESSING_FAILED)
+      }
+
+      val cleanCharacterName = character.name.replace(" ", "_")
+      val fileName = "$cleanCharacterName-$packName.zip"
+      updateMessage("Writing file ${fileName}...")
+
+      val downloadPath = getDataDir().resolve("downloads").resolve(fileName)
+      downloadFile(
+        url = monitorResult.jobResult!!,
+        path = downloadPath
+      )
+
+      updateMessage("$downloadPath is finished!")
+      updateProgress(0, 0)
+
+      DownloadResult(
+        path = downloadPath,
+        status = DownloadStatus.SUCCESS,
+        operationResult = monitorResult
+      )
     }
-
-    var monitorResult: OperationResult
-    do {
-      println("Waiting for pack...")
-      Thread.sleep(5000)
-      monitorResult = monitor(exportResult.uuid)
-    } while (monitorResult.status == "processing")
-
-    if (monitorResult.status == "failed") {
-      throw Error("job failed")
-    }
-    writeFile(monitorResult.jobResult!!, "${character.name}_${packName}.zip")
-  }
-
-  private fun writeFile(jobResult: String, fileName: String) {
-    println("Writing file $fileName...")
-    downloadFile(
-      url = jobResult,
-      path = getDataDir().resolve("downloads").resolve(fileName)
-    )
-    println("Done!")
   }
 
   private fun monitor(exportResultUuid: String): OperationResult {
