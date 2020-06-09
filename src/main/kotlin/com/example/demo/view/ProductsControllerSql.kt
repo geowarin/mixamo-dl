@@ -3,6 +3,7 @@ package com.example.demo.view
 import com.example.demo.downloadFile
 import com.example.demo.json.mapObj
 import com.example.demo.json.string
+import com.example.demo.jwt.readToken
 import com.example.demo.paths.readText
 import com.example.demo.sql.MotionDetails
 import com.example.demo.sql.Product
@@ -16,11 +17,8 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 val baseURI = "https://www.mixamo.com/api/v1"
-val token = """
-eyJ4NXUiOiJpbXNfbmExLWtleS0xLmNlciIsImFsZyI6IlJTMjU2In0.eyJpZCI6IjE1ODkxMTI3MjEyNTJfZjcwMGE2NzMtNTQ4My00MGEyLTkwZGUtM2Q5OGY0OTdjZDEzX3VlMSIsImNsaWVudF9pZCI6Im1peGFtbzEiLCJ1c2VyX2lkIjoiQTY1QjQ1MjY1QzAzMDY0QzBBNDk1Q0NGQEFkb2JlSUQiLCJzdGF0ZSI6IiIsInR5cGUiOiJhY2Nlc3NfdG9rZW4iLCJhcyI6Imltcy1uYTEiLCJmZyI6IlVOUUxYWFZRWFBPNTU3NktDNllMUVBRQUpZPT09PT09Iiwic2lkIjoiMTU4OTExMjcxOTYzOV9mZjFiZTRlYy05NDQzLTQwNTYtOGNmYy00OTUyNGFhNDRhMzVfdWUxIiwicnRpZCI6IjE1ODkxMTI3MjEyNTJfZTYwZTgwMzItNzI3ZS00Nzk4LThkYTEtMjVhMWU3NmQ5OTY4X3VlMSIsIm9jIjoicmVuZ2EqbmExcioxNzFmZTdmYzdkOSpHWEo0NkY4MDhYMktIQlNRQ0FXQjNHOUdUNCIsInJ0ZWEiOiIxNTkwMzIyMzIxMjUyIiwibW9pIjoiNjUyMzdiZWMiLCJjIjoiMHVLMkxTbVFSZmJNZFRuTUlPT2JDdz09IiwiZXhwaXJlc19pbiI6Ijg2NDAwMDAwIiwic2NvcGUiOiJvcGVuaWQsQWRvYmVJRCxmZXRjaF9zYW8sc2FvLmNyZWF0aXZlX2Nsb3VkIiwiY3JlYXRlZF9hdCI6IjE1ODkxMTI3MjEyNTIifQ.RjfqgQboXAVH72BZ_hC7Udqc-IOR8gTnMaKp67imrCrIkuWBeVEwXYr-fi9uTe9ricmK2tuaVW1KY_v3t-uYHAU_BFi2qCpzZ4mmqkIvEnWDhmJRxUGH6lVgnXj_lD38m1SkGEWaBAgRKVUTwR8LBgDUK-j7SoC3zsK8j32BZTuW9yh65yMIbgnenhbg-pxyg0ODf6y8TTU56B0gFN_bn14F9LivugFiaXwJTbmRrEKHtzeJEY1b9HAAiBJbL7sKFH4Ltn3g6obc-W2m5RJAwribdD4rZj1XWy03fhxMDHrX7fBy3qLJwxhpvYee6NtSEk-JMX5o_1cYEeMdiiXx5A
-""".trim()
-val headers = mapOf(
-    "Authorization" to "Bearer $token",
+fun headers() = mapOf(
+    "Authorization" to "Bearer ${readToken()}",
     "X-Api-Key" to "mixamo2"
 )
 
@@ -63,7 +61,7 @@ class ProductsControllerSql : Controller() {
   private fun monitor(exportResultUuid: String): OperationResult {
     val resultObj = khttp.get(
         url = "${baseURI}/characters/${exportResultUuid}/monitor",
-        headers = headers
+        headers = headers()
     ).jsonObject
     return operationResult(resultObj)
   }
@@ -84,7 +82,7 @@ class ProductsControllerSql : Controller() {
     val payload = combineExportParameters(motions, characterId)
     val resultObj = khttp.post(
         url = "${baseURI}/animations/export",
-        headers = headers,
+        headers = headers(),
         json = payload
     ).jsonObject
     return operationResult(resultObj)

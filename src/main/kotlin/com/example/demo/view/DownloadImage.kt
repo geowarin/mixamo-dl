@@ -1,11 +1,16 @@
 package com.example.demo.view
 
 import com.example.demo.downloadFile
+import com.example.demo.paths.exists
+import com.example.demo.paths.getCacheDir
+import com.example.demo.paths.toURL
+import com.example.demo.paths.totalSpace
 import com.example.demo.sql.Product
 import javafx.beans.property.ObjectProperty
 import javafx.beans.value.ObservableValue
 import javafx.scene.image.Image
-import tornadofx.*
+import tornadofx.objectProperty
+import tornadofx.onChange
 import java.io.File
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -19,7 +24,11 @@ fun downloadImage(product: Product, width: Double, height: Double): ObservableVa
   return image
 }
 
-fun downloadImage(productObservable: ObservableValue<Product?>, width: Double, height: Double): ObservableValue<Image?> {
+fun downloadImage(
+  productObservable: ObservableValue<Product?>,
+  width: Double,
+  height: Double
+): ObservableValue<Image?> {
   val image = objectProperty<Image>()
 
   productObservable.onChange { product ->
@@ -27,14 +36,7 @@ fun downloadImage(productObservable: ObservableValue<Product?>, width: Double, h
       return@onChange
     }
 
-    val url = product.thumbnail_animated
-    val cacheKey = "${product.id}.${File(url).extension}"
-    val cachedImage = File("./imageCache/${product.type}/$cacheKey")
-    pool.execute {
-      if (!cachedImage.exists() || cachedImage.totalSpace == 0L)
-        downloadFile(url, cachedImage)
-      image.set(Image(cachedImage.toURI().toURL().toString(), width, height, true, true, true))
-    }
+    dl(product, image, width, height)
   }
 
   return image
@@ -43,11 +45,12 @@ fun downloadImage(productObservable: ObservableValue<Product?>, width: Double, h
 private fun dl(product: Product, image: ObjectProperty<Image>, width: Double, height: Double) {
   val url = product.thumbnail_animated
   val cacheKey = "${product.id}.${File(url).extension}"
-  val cachedImage = File("./imageCache/${product.type}/$cacheKey")
+  val cachedImage = getCacheDir().resolve("${product.type}/$cacheKey")
 
   pool.execute {
     if (!cachedImage.exists() || cachedImage.totalSpace == 0L)
       downloadFile(url, cachedImage)
-    image.set(Image(cachedImage.toURI().toURL().toString(), width, height, true, true, true))
+    image.set(Image(cachedImage.toURL().toString(), width, height, true, true, true))
   }
 }
+

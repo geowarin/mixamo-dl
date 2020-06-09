@@ -1,11 +1,27 @@
 package com.example.demo.app
 
+import com.example.demo.jwt.writeToken
+import com.example.demo.paths.isAppRunning
 import com.example.demo.view.MainView
-import tornadofx.*
-import java.io.File
+import tornadofx.App
+import tornadofx.launch
 
 class MyApp : App(MainView::class, Styles::class)
 
 fun main(args: Array<String>) {
+  if (args.isNotEmpty()) {
+    val split = args[0].removePrefix("mixamo://").split("/")
+    executeCommand(split.first(), split.drop(1))
+  }
+
+  if (!isAppRunning()) {
     launch<MyApp>(args)
+  }
+}
+
+fun executeCommand(command: String, arguments: List<String>) {
+  println("$command : ${arguments.joinToString(",")}")
+  when (command) {
+    "token" -> writeToken(arguments)
+  }
 }
