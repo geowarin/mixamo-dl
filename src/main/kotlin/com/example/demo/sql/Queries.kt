@@ -150,6 +150,9 @@ order by name
 """
 
   fun getProducts(ids: List<String>): List<Product> {
+    if (ids.isEmpty()) {
+      return emptyList()
+    }
     val params = mapOf(
       "ids" to ids
     )

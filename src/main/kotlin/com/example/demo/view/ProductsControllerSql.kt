@@ -4,18 +4,23 @@ import com.example.demo.downloadFile
 import com.example.demo.json.mapObj
 import com.example.demo.json.string
 import com.example.demo.jwt.readToken
+import com.example.demo.paths.exists
 import com.example.demo.paths.getDataDir
+import com.example.demo.paths.list
 import com.example.demo.paths.readText
 import com.example.demo.sql.MotionDetails
 import com.example.demo.sql.Product
 import com.example.demo.sql.ProductType
 import com.example.demo.sql.Queries
 import com.nfeld.jsonpathlite.extension.read
+import javafx.beans.property.SimpleStringProperty
+import javafx.scene.control.TextInputDialog
 import org.json.JSONArray
 import org.json.JSONObject
 import tornadofx.*
+import java.nio.file.FileSystem
+import java.nio.file.FileSystems
 import java.nio.file.Files
-import java.nio.file.Path
 
 val baseURI = "https://www.mixamo.com/api/v1"
 fun headers() = mapOf(
@@ -23,7 +28,7 @@ fun headers() = mapOf(
     "X-Api-Key" to "mixamo2"
 )
 
-class ProductsControllerSql : Controller() {
+class ProductsControllerSql(fs: FileSystem = FileSystems.getDefault()) : Controller() {
   val queries: Queries = Queries()
   var queryResult = observableListOf<Product>()
 
@@ -126,27 +131,63 @@ class ProductsControllerSql : Controller() {
     queryResult.setAll(queries.searchProduct(ProductType.Motion, searchText))
   }
 
+  fun clearSelectedMotions() {
+    selectedMotions.clear()
+  }
+
   fun addMotionToSelection(motion: Product?) {
     if (motion != null && !selectedMotions.contains(motion)) {
       selectedMotions.add(motion)
     }
   }
 
-  fun savePack(path: Path) {
+  val packsDir = getDataDir(fs).resolve("packs")
+
+  val packs = observableListOf(listPacks())
+  val selectedPack = SimpleStringProperty()
+
+  fun writePackToDisk(packName: String) {
+    val savePath = packsDir.resolve(packName)
     val motionsArray = selectedMotions.map { JSONObject().put("id", it.id) }
     val pack = JSONObject()
         .put("motions", motionsArray)
 
-    Files.createDirectories(path.parent)
-    Files.write(path, pack.toString().toByteArray())
+    Files.createDirectories(savePath.parent)
+    Files.write(savePath, pack.toString().toByteArray())
   }
 
-  fun loadPack(path: Path) {
+  fun loadPack(packName: String) {
+    val path = packsDir.resolve(packName)
     val motionsJsonArray = JSONObject(path.readText()).getJSONArray("motions")
     val ids = motionsJsonArray.mapObj { it.string("id") }
     selectedMotions.setAll(queries.getProducts(ids))
   }
 
+  fun refreshPacks() {
+    packs.setAll(listPacks())
+  }
+
+  fun createPack() {
+    TextInputDialog().showAndWait().ifPresent { text ->
+      clearSelectedMotions()
+      val savePath = packsDir.resolve("${text}.json")
+      if (savePath.exists()) {
+        confirm("Overwrite $savePath ?") {
+          savePackAndRefresh("${text}.json")
+        }
+      } else {
+        savePackAndRefresh("${text}.json")
+      }
+    }
+  }
+
+  fun savePackAndRefresh(packName: String) {
+    writePackToDisk(packName)
+    selectedPack.value = packName
+    refreshPacks()
+  }
+
+  private fun listPacks() = packsDir.list().filter { it.toString().endsWith(".json") }.map { it.fileName.toString() }
 }
 
 data class OperationResult(

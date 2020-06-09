@@ -60,6 +60,4 @@ fun Path.write(text: String) {
   }
 }
 
-fun Path.list(): List<Path> = Files.list(
-  this
-).toList()
+fun Path.list(): List<Path> = if (this.exists()) Files.list(this).toList() else emptyList()

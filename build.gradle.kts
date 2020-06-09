@@ -7,6 +7,7 @@ plugins {
 
 repositories {
   jcenter()
+  maven("https://jitpack.io")
 }
 
 dependencies {
@@ -18,6 +19,7 @@ dependencies {
   implementation("org.xerial:sqlite-jdbc:3.31.1")
   implementation("khttp:khttp:1.0.0")
   implementation("com.nfeld.jsonpathlite:json-path-lite:1.1.0")
+  implementation("com.github.pepperonas:FxIconics:master")
 
   implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
   testImplementation("org.jetbrains.kotlin:kotlin-test")

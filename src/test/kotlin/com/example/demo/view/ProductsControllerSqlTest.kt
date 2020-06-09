@@ -20,8 +20,8 @@ import java.nio.file.Path
 import kotlin.test.assertEquals
 
 internal class ProductsControllerSqlTest {
-  val controller = ProductsControllerSql()
   val fs: FileSystem = Jimfs.newFileSystem(Configuration.forCurrentPlatform())
+  val controller = ProductsControllerSql(fs)
 
   @Test
   fun `convert parameters of motion pack`() {
@@ -102,11 +102,10 @@ internal class ProductsControllerSqlTest {
 
   @Test
   fun `save pack`() {
-    val path = fs.getPath("./packs/myPack.json")
     val motion = controller.queries.getProducts(ProductType.Motion).find { it.id == RIFLE_RUN_MOTION_ID }
 
     controller.addMotionToSelection(motion)
-    controller.savePack(path)
+    controller.writePackToDisk("myPack.json")
 
     val expected = """
           {
@@ -115,12 +114,11 @@ internal class ProductsControllerSqlTest {
             ]
           }
       """
-    jsonAssert(expected, path.readText())
+    jsonAssert(expected, controller.packsDir.resolve("myPack.json").readText())
   }
 
   @Test
   fun `load pack`() {
-    val path = fs.getPath("./packs/myPack.json")
     val contents = """
           {
             "motions": [
@@ -128,9 +126,9 @@ internal class ProductsControllerSqlTest {
             ]
           }
       """
-    path.write(contents)
+    controller.packsDir.resolve("myPack.json").write(contents)
 
-    controller.loadPack(path)
+    controller.loadPack("myPack.json")
 
     val motion = controller.queries.getProducts(ProductType.Motion).find { it.id == RIFLE_RUN_MOTION_ID }
     assertThat(controller.selectedMotions).containsExactly(motion)
