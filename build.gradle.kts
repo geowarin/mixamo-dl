@@ -52,8 +52,9 @@ tasks.withType<Test> {
 tasks.withType<edu.sc.seis.launch4j.tasks.DefaultLaunch4jTask> {
   bundledJrePath = "C:/Users/perso/dev/tools/jdk-8u241-windows-x64"
   bundledJre64Bit = true
-//  headerType = "gui"
-  headerType = "console"
+  icon = "${projectDir}/src/main/resources/mixamo.ico"
+  headerType = "gui"
+//  headerType = "console"
 
   setCopyConfigurable(project.tasks.shadowJar.get().outputs.files)
   jar = "lib/${project.tasks.shadowJar.get().archiveName}"

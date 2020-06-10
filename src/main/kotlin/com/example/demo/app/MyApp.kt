@@ -3,10 +3,13 @@ package com.example.demo.app
 import com.example.demo.jwt.writeToken
 import com.example.demo.paths.isAppRunning
 import com.example.demo.view.MainView
+import javafx.scene.image.Image
 import tornadofx.App
 import tornadofx.launch
 
-class MyApp : App(MainView::class, Styles::class)
+val icon = Image(MyApp::class.java.getResourceAsStream("/mixamo.png"))
+
+class MyApp : App(icon, MainView::class, Styles::class)
 
 fun main(args: Array<String>) {
   if (args.isNotEmpty()) {
