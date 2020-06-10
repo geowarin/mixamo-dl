@@ -7,9 +7,7 @@ import javafx.beans.property.Property
 import javafx.concurrent.Task
 import javafx.event.EventTarget
 import javafx.geometry.Pos
-import javafx.scene.Parent
-import javafx.scene.control.ComboBox
-import javafx.scene.control.TextField
+import javafx.scene.control.*
 import javafx.scene.layout.StackPane
 import javafx.scene.paint.Color
 import javafx.scene.text.TextAlignment
@@ -194,10 +192,14 @@ class MotionsView : View() {
 class MenuBarView : View() {
   override val root = menubar {
     menu("Open") {
-      item(name = "Downloads dir", graphic = faIcon(Glyph.DOWNLOAD).color(Color.BLACK)).action {
+      item(name = "Downloads dir"){
+        graphic = faIcon(Glyph.DOWNLOAD).color(Color.BLACK)
+      }.action {
         openInExplorer(getDataDir().resolve("downloads"))
       }
-      item(name = "Motions pack dir", graphic = faIcon(Glyph.ASTERISK).color(Color.BLACK)).action {
+      item(name = "Motions pack dir") {
+        graphic = faIcon(Glyph.ASTERISK).color(Color.BLACK)
+      }.action {
         openInExplorer(getDataDir().resolve("packs"))
       }
     }
