@@ -7,15 +7,16 @@ import javafx.beans.property.Property
 import javafx.concurrent.Task
 import javafx.event.EventTarget
 import javafx.geometry.Pos
-import javafx.scene.control.*
+import javafx.scene.control.ComboBox
+import javafx.scene.control.TextField
 import javafx.scene.layout.StackPane
 import javafx.scene.paint.Color
 import javafx.scene.text.TextAlignment
 import org.controlsfx.control.StatusBar
-import org.controlsfx.glyphfont.FontAwesome.Glyph
+import org.controlsfx.glyphfont.FontAwesome.Glyph.*
 import tornadofx.*
-import tornadofx.controlsfx.glyph
 import tornadofx.controlsfx.statusbar
+import tornadofx.controlsfx.toGlyph
 import java.awt.Desktop
 import java.nio.file.Path
 
@@ -39,10 +40,6 @@ class MainView : View("Mixamo importer") {
 
     bottom = find<DownloadView>().root
   }
-}
-
-private fun EventTarget.faIcon(glyph: Glyph): org.controlsfx.glyphfont.Glyph {
-  return glyph("FontAwesome", glyph)
 }
 
 private fun <T> ComboBox<T>.bindSelectedBidirectional(selectionProp: Property<T>) {
@@ -98,11 +95,11 @@ class DownloadView : View() {
 
       when (res.status) {
         DownloadStatus.SUCCESS ->
-          addStatusButton(text = "Finished", res = res, buttonIcon = faIcon(Glyph.CHECK).color(Color.GREEN)) {
+          addStatusButton(text = "Finished", res = res, buttonIcon = CHECK.toGlyph().color(Color.GREEN)) {
             openInExplorer(res.path!!.parent)
           }
         else ->
-          addStatusButton(text = "Error", res = res, buttonIcon = faIcon(Glyph.EXCLAMATION_TRIANGLE).color(Color.RED)) {
+          addStatusButton(text = "Error", res = res, buttonIcon = EXCLAMATION_TRIANGLE.toGlyph().color(Color.RED)) {
             error(
               header = "Error while downloading ${character.name} - $packName : ${res.status}",
               content = res.operationResult.resultObj.toString(2)
@@ -168,7 +165,7 @@ class MotionsView : View() {
         paginator.currentPage = 1
         productsController.setQuery((e.source as TextField).text)
       }
-      faIcon(Glyph.SEARCH)
+      SEARCH.toGlyph()
     }
 
     val datagrid = datagrid(paginator.items) {
@@ -192,13 +189,13 @@ class MotionsView : View() {
 class MenuBarView : View() {
   override val root = menubar {
     menu("Open") {
-      item(name = "Downloads dir"){
-        graphic = faIcon(Glyph.DOWNLOAD).color(Color.BLACK)
+      item(name = "Downloads dir") {
+        graphic = DOWNLOAD.toGlyph().color(Color.BLACK)
       }.action {
         openInExplorer(getDataDir().resolve("downloads"))
       }
       item(name = "Motions pack dir") {
-        graphic = faIcon(Glyph.ASTERISK).color(Color.BLACK)
+        graphic = ASTERISK.toGlyph().color(Color.BLACK)
       }.action {
         openInExplorer(getDataDir().resolve("packs"))
       }
@@ -222,10 +219,10 @@ class MotionPackView : View() {
       selectedPack.onChange { selectedPack ->
         productsController.loadPack(selectedPack!!)
       }
-      button(graphic = faIcon(Glyph.PLUS)).action {
+      button(graphic = PLUS.toGlyph()).action {
         productsController.createPack()
       }
-      button(graphic = faIcon(Glyph.REFRESH)).action {
+      button(graphic = REFRESH.toGlyph()).action {
         productsController.refreshPacks()
       }
       button("Save")
