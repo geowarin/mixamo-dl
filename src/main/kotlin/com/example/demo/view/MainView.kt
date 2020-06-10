@@ -7,8 +7,8 @@ import javafx.beans.property.Property
 import javafx.concurrent.Task
 import javafx.event.EventTarget
 import javafx.geometry.Pos
+import javafx.scene.Parent
 import javafx.scene.control.ComboBox
-import javafx.scene.control.ContentDisplay
 import javafx.scene.control.TextField
 import javafx.scene.layout.StackPane
 import javafx.scene.paint.Color
@@ -27,16 +27,7 @@ class MainView : View("Mixamo importer") {
     setPrefSize(1500.0, 1000.0)
 
     top = borderpane {
-      top = menubar {
-        menu("Open") {
-          item(name = "Downloads dir", graphic = faIcon(Glyph.DOWNLOAD).color(Color.BLACK)).action {
-            openInExplorer(getDataDir().resolve("downloads"))
-          }
-          item(name = "Motions pack dir", graphic = faIcon(Glyph.ASTERISK).color(Color.BLACK)).action {
-            openInExplorer(getDataDir().resolve("packs"))
-          }
-        }
-      }
+      top = find<MenuBarView>().root
       center = find<MotionPackView>().root
     }
 
@@ -116,7 +107,7 @@ class DownloadView : View() {
           addStatusButton(text = "Error", res = res, buttonIcon = faIcon(Glyph.EXCLAMATION_TRIANGLE).color(Color.RED)) {
             error(
               header = "Error while downloading ${character.name} - $packName : ${res.status}",
-              content = res.operationResult.message
+              content = res.operationResult.resultObj.toString(2)
             )
           }
       }
@@ -128,12 +119,12 @@ class DownloadView : View() {
     text: String,
     buttonIcon: org.controlsfx.glyphfont.Glyph,
     res: DownloadResult,
-    action: () -> Unit
+    action: () -> Unit = {}
   ) {
-    val dlFinishedButton = button(text) {
-      // FIXME: icon not displayed ?
-      icon = buttonIcon
-      tooltip(res.path.toString())
+    val dlFinishedButton = button(text, buttonIcon) {
+      if (res.path != null) {
+        tooltip(res.path.toString())
+      }
     }
     dlFinishedButton.action {
       action()
@@ -200,6 +191,19 @@ class MotionsView : View() {
   }
 }
 
+class MenuBarView : View() {
+  override val root = menubar {
+    menu("Open") {
+      item(name = "Downloads dir", graphic = faIcon(Glyph.DOWNLOAD).color(Color.BLACK)).action {
+        openInExplorer(getDataDir().resolve("downloads"))
+      }
+      item(name = "Motions pack dir", graphic = faIcon(Glyph.ASTERISK).color(Color.BLACK)).action {
+        openInExplorer(getDataDir().resolve("packs"))
+      }
+    }
+  }
+}
+
 class MotionPackView : View() {
   private val productsController by inject<ProductsControllerSql>()
 
@@ -216,14 +220,10 @@ class MotionPackView : View() {
       selectedPack.onChange { selectedPack ->
         productsController.loadPack(selectedPack!!)
       }
-      button {
-        icon = faIcon(Glyph.PLUS)
-      }.action {
+      button(graphic = faIcon(Glyph.PLUS)).action {
         productsController.createPack()
       }
-      button {
-        icon = faIcon(Glyph.REFRESH)
-      }.action {
+      button(graphic = faIcon(Glyph.REFRESH)).action {
         productsController.refreshPacks()
       }
       button("Save")
@@ -261,7 +261,6 @@ class CharacterView : View() {
 
 private fun EventTarget.productPreview(product: Product): StackPane {
   return stackpane {
-//    contentDisplay = ContentDisplay.BOTTOM
     alignment = Pos.BOTTOM_CENTER
     imageview(downloadImage(product, 70.0, 70.0)) {
       fitWidth = 70.0

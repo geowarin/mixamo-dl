@@ -30,8 +30,8 @@ import java.nio.file.Path
 
 val baseURI = "https://www.mixamo.com/api/v1"
 fun headers() = mapOf(
-    "Authorization" to "Bearer ${readToken()}",
-    "X-Api-Key" to "mixamo2"
+  "Authorization" to "Bearer ${readToken()}",
+  "X-Api-Key" to "mixamo2"
 )
 
 class DownloadResult(
@@ -62,74 +62,71 @@ class ProductsControllerSql(fs: FileSystem = FileSystems.getDefault()) : Control
     packName: String,
     selectedMotions: List<Product>,
     character: Product
-  ): Task<DownloadResult> {
-    return task {
-      val motions: List<MotionDetails> = selectedMotions.flatMap { it.motions }
-      updateMessage("Started export of ${motions.size} motions")
+  ): Task<DownloadResult> = task {
 
-      val exportResult = export(motions, character.id)
-      if (exportResult.status == "failed") {
-        return@task DownloadResult(operationResult = exportResult, status = DownloadStatus.EXPORT_FAILED)
-      }
-
-      var monitorResult: OperationResult
-      do {
-        updateMessage("Waiting for pack...")
-        Thread.sleep(5000)
-        monitorResult = monitor(exportResult.uuid)
-      } while (monitorResult.status == "processing")
-
-      if (monitorResult.status == "failed") {
-        return@task DownloadResult(operationResult = monitorResult, status = DownloadStatus.PROCESSING_FAILED)
-      }
-
-      val cleanCharacterName = character.name.replace(" ", "_")
-      val fileName = "$cleanCharacterName-$packName.zip"
-      updateMessage("Writing file ${fileName}...")
-
-      val downloadPath = getDataDir().resolve("downloads").resolve(fileName)
-      downloadFile(
-        url = monitorResult.jobResult!!,
-        path = downloadPath
-      )
-
-      updateMessage("$downloadPath is finished!")
+    fun finishWithMessage(message: String) {
+      updateMessage(message)
       updateProgress(0, 0)
-
-      DownloadResult(
-        path = downloadPath,
-        status = DownloadStatus.SUCCESS,
-        operationResult = monitorResult
-      )
     }
+
+    val motions: List<MotionDetails> = selectedMotions.flatMap { it.motions }
+    updateMessage("Started export of ${motions.size} motions")
+
+    val exportResult = export(motions, character.id)
+    if (exportResult.isError()) {
+      finishWithMessage("Export error")
+      return@task DownloadResult(operationResult = exportResult, status = DownloadStatus.EXPORT_FAILED)
+    }
+
+    var monitorResult: OperationResult
+    do {
+      updateMessage("Waiting for pack...")
+      Thread.sleep(5000)
+      monitorResult = monitor(exportResult.uuid)
+    } while (!monitorResult.isError())
+
+    if (monitorResult.isError()) {
+      finishWithMessage("Processing error")
+      return@task DownloadResult(operationResult = monitorResult, status = DownloadStatus.PROCESSING_FAILED)
+    }
+
+    val cleanCharacterName = character.name.replace(" ", "_")
+    val fileName = "$cleanCharacterName-$packName.zip"
+    updateMessage("Writing file ${fileName}...")
+
+    val downloadPath = getDataDir().resolve("downloads").resolve(fileName)
+    downloadFile(
+      url = monitorResult.jobResult!!,
+      path = downloadPath
+    )
+
+    finishWithMessage("$downloadPath is finished!")
+
+    DownloadResult(
+      path = downloadPath,
+      status = DownloadStatus.SUCCESS,
+      operationResult = monitorResult
+    )
   }
 
   private fun monitor(exportResultUuid: String): OperationResult {
     val resultObj = khttp.get(
-        url = "${baseURI}/characters/${exportResultUuid}/monitor",
-        headers = headers()
+      url = "${baseURI}/characters/${exportResultUuid}/monitor",
+      headers = headers()
     ).jsonObject
     return operationResult(resultObj)
   }
 
   private fun operationResult(resultObj: JSONObject): OperationResult {
-    if (resultObj.has("error_code") || resultObj.has("error")) {
-      throw Error(resultObj.string("message"))
-    }
-    return OperationResult(
-        status = resultObj.string("status"),
-        message = resultObj.string("message"),
-        uuid = resultObj.string("uuid"),
-        jobResult = resultObj.optString("job_result")
-    )
+    return OperationResult(resultObj)
   }
 
   private fun export(motions: List<MotionDetails>, characterId: String): OperationResult {
     val payload = combineExportParameters(motions, characterId)
     val resultObj = khttp.post(
-        url = "${baseURI}/animations/export",
-        headers = headers(),
-        json = payload
+      url = "${baseURI}/animations/export",
+      headers = headers(),
+      json = payload
     ).jsonObject
     return operationResult(resultObj)
   }
@@ -137,25 +134,26 @@ class ProductsControllerSql(fs: FileSystem = FileSystems.getDefault()) : Control
   fun combineExportParameters(motions: List<MotionDetails>, characterId: String): JSONObject {
     val motionOptionsArray: List<JSONObject> = motions.map(this::toExportParameters)
     return JSONObject()
-        .put("gms_hash", motionOptionsArray)
-        .put("preferences",
-            JSONObject()
-                .put("format", "fbx7_unity")
-                .put("mesh_motionpack", "t-pose")
-                .put("fps", "30")
-                .put("reducekf", "0")
-        )
-        .put("character_id", characterId)
-        .put("type", "MotionPack")
-        .put("product_name", "Locomotion Pack")
+      .put("gms_hash", motionOptionsArray)
+      .put(
+        "preferences",
+        JSONObject()
+          .put("format", "fbx7_unity")
+          .put("mesh_motionpack", "t-pose")
+          .put("fps", "30")
+          .put("reducekf", "0")
+      )
+      .put("character_id", characterId)
+      .put("type", "MotionPack")
+      .put("product_name", "Locomotion Pack")
   }
 
   fun toExportParameters(motionDetails: MotionDetails): JSONObject {
     return motionDetails.gms_hash
-        .put("name", motionDetails.name)
-        // "params": [["Posture", 1.0], ["Step Width", 1.0], ["Overdrive", 0.0]] => 1.0,1.0,1.0
-        .put("params", motionDetails.gms_hash.read<JSONArray>("$.params")!!
-            .joinToString { (it as JSONArray).getDouble(1).toString() })
+      .put("name", motionDetails.name)
+      // "params": [["Posture", 1.0], ["Step Width", 1.0], ["Overdrive", 0.0]] => 1.0,1.0,1.0
+      .put("params", motionDetails.gms_hash.read<JSONArray>("$.params")!!
+        .joinToString { (it as JSONArray).getDouble(1).toString() })
   }
 
   fun loadCharacters(): List<Product> = queries.getProducts(ProductType.Character)
@@ -183,7 +181,7 @@ class ProductsControllerSql(fs: FileSystem = FileSystems.getDefault()) : Control
     val savePath = packsDir.resolve(packName)
     val motionsArray = selectedMotions.map { JSONObject().put("id", it.id) }
     val pack = JSONObject()
-        .put("motions", motionsArray)
+      .put("motions", motionsArray)
 
     Files.createDirectories(savePath.parent)
     Files.write(savePath, pack.toString().toByteArray())
@@ -224,8 +222,14 @@ class ProductsControllerSql(fs: FileSystem = FileSystems.getDefault()) : Control
 }
 
 data class OperationResult(
-    var status: String,
-    var message: String,
-    var uuid: String,
-    var jobResult: String?
-)
+  val resultObj: JSONObject
+) {
+  // error = 401013 => OAuth token invalid
+  fun isError() = error.isNotBlank() || status == "failed"
+
+  val status get() = resultObj.string("status")
+  val message get() = resultObj.string("message")
+  val uuid get() = resultObj.string("uuid")
+  val jobResult get() = resultObj.optString("job_result")
+  val error get() = resultObj.optString("error_code") ?: resultObj.optString("error")
+}

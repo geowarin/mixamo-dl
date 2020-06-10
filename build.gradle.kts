@@ -14,12 +14,12 @@ dependencies {
   // Align versions of all Kotlin components
   implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
   implementation("no.tornado:tornadofx:1.7.20")
+  implementation("no.tornado:tornadofx-controlsfx:0.1.1")
 
   implementation("com.github.andrewoma.kwery:core:0.17")
   implementation("org.xerial:sqlite-jdbc:3.31.1")
   implementation("khttp:khttp:1.0.0")
   implementation("com.nfeld.jsonpathlite:json-path-lite:1.1.0")
-  implementation("no.tornado:tornadofx-controlsfx:0.1.1")
 
   implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
   testImplementation("org.jetbrains.kotlin:kotlin-test")
