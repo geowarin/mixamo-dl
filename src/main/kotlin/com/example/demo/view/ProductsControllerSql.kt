@@ -13,6 +13,7 @@ import com.example.demo.sql.Product
 import com.example.demo.sql.ProductType
 import com.example.demo.sql.Queries
 import com.nfeld.jsonpathlite.extension.read
+import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.concurrent.Task
 import javafx.scene.control.TextInputDialog
@@ -50,8 +51,8 @@ class ProductsControllerSql(fs: FileSystem = FileSystems.getDefault()) : Control
   var queryResult = observableListOf<Product>()
 
   val selectedMotions = observableListOf<Product>()
-
-  val currentTaskStatus = SimpleStringProperty()
+  val selectedMotion = SimpleObjectProperty<Product>()
+  val selectedCharacter = SimpleObjectProperty<Product>()
 
   init {
     setQuery("")
