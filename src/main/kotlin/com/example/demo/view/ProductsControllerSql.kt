@@ -83,7 +83,7 @@ class ProductsControllerSql(fs: FileSystem = FileSystems.getDefault()) : Control
       updateMessage("Waiting for pack...")
       Thread.sleep(5000)
       monitorResult = monitor(exportResult.uuid)
-    } while (!monitorResult.isError())
+    } while (!monitorResult.isError() && monitorResult.status == "processing")
 
     if (monitorResult.isError()) {
       finishWithMessage("Processing error")
