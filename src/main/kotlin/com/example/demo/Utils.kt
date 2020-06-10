@@ -6,8 +6,8 @@ import java.nio.file.Path
 
 fun downloadFile(url: String, path: Path) {
   Files.createDirectories(path.parent)
-  URL(url).openStream().use { urlStream ->
-    Files.newOutputStream(path).use { out ->
+  URL(url).openStream().buffered().use { urlStream ->
+    Files.newOutputStream(path).buffered().use { out ->
       urlStream.copyTo(out)
     }
   }
