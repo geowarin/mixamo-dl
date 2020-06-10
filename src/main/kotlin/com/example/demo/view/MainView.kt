@@ -1,28 +1,44 @@
 package com.example.demo.view
 
 import com.example.demo.app.Styles.Companion.downloadButton
+import com.example.demo.paths.getDataDir
 import com.example.demo.sql.Product
 import javafx.beans.property.Property
 import javafx.concurrent.Task
 import javafx.event.EventTarget
 import javafx.geometry.Pos
 import javafx.scene.control.ComboBox
+import javafx.scene.control.ContentDisplay
 import javafx.scene.control.TextField
 import javafx.scene.layout.StackPane
 import javafx.scene.paint.Color
+import javafx.scene.text.TextAlignment
 import org.controlsfx.control.StatusBar
 import org.controlsfx.glyphfont.FontAwesome.Glyph
 import tornadofx.*
 import tornadofx.controlsfx.glyph
 import tornadofx.controlsfx.statusbar
 import java.awt.Desktop
+import java.nio.file.Path
 
 class MainView : View("Mixamo importer") {
 
   override val root = borderpane {
     setPrefSize(1500.0, 1000.0)
 
-    top = find<MotionPackView>().root
+    top = borderpane {
+      top = menubar {
+        menu("Open") {
+          item(name = "Downloads dir", graphic = faIcon(Glyph.DOWNLOAD).color(Color.BLACK)).action {
+            openInExplorer(getDataDir().resolve("downloads"))
+          }
+          item(name = "Motions pack dir", graphic = faIcon(Glyph.ASTERISK).color(Color.BLACK)).action {
+            openInExplorer(getDataDir().resolve("packs"))
+          }
+        }
+      }
+      center = find<MotionPackView>().root
+    }
 
     center = splitpane {
       setDividerPositions(0.20, 0.70, 1.0)
@@ -94,7 +110,7 @@ class DownloadView : View() {
       when (res.status) {
         DownloadStatus.SUCCESS ->
           addStatusButton(text = "Finished", res = res, buttonIcon = faIcon(Glyph.CHECK).color(Color.GREEN)) {
-            Desktop.getDesktop().open(res.path?.parent?.toFile())
+            openInExplorer(res.path!!.parent)
           }
         else ->
           addStatusButton(text = "Error", res = res, buttonIcon = faIcon(Glyph.EXCLAMATION_TRIANGLE).color(Color.RED)) {
@@ -115,6 +131,7 @@ class DownloadView : View() {
     action: () -> Unit
   ) {
     val dlFinishedButton = button(text) {
+      // FIXME: icon not displayed ?
       icon = buttonIcon
       tooltip(res.path.toString())
     }
@@ -244,16 +261,31 @@ class CharacterView : View() {
 
 private fun EventTarget.productPreview(product: Product): StackPane {
   return stackpane {
+//    contentDisplay = ContentDisplay.BOTTOM
+    alignment = Pos.BOTTOM_CENTER
     imageview(downloadImage(product, 70.0, 70.0)) {
       fitWidth = 70.0
       fitHeight = 70.0
+      padding = insets(2.5, 2.5)
     }
     label(product.name) {
       textFill = Color.WHITE
       isWrapText = true
       style {
-        fontScale = 5.0 / product.name.length
+        fontSize = clamp(10.0, 100.0 / product.name.length, 18.0).px
+        padding = box(0.px, 2.px)
+        textAlignment = TextAlignment.CENTER
       }
     }
   }
+}
+
+fun clamp(min: Double, value: Double, max: Double): Double {
+  if (value < min) return min
+  if (value > max) return max
+  return value
+}
+
+private fun openInExplorer(path: Path) {
+  Desktop.getDesktop().open(path.toFile())
 }
